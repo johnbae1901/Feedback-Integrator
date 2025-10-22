@@ -5,7 +5,12 @@
 // Matches the project's "single-scalar error per run" API by returning
 // max_t getError(state(t), ...).  'state' follows the 3x4 layout used in Euler.
 
-double splitting_strang(
+std::tuple<
+    double, 
+    double, 
+    double, 
+    double> 
+    splitting_strang(
     const double R0[3][3],
     const double Omega0[3],
     const double I[3][3],

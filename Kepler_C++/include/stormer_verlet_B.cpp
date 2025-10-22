@@ -138,19 +138,23 @@ stormer_verlet_B(const std::vector<double>& xi,
     return {x1, x2, x3, v1, v2, v3, t};
 }
 
-double stormer_verlet_B_error(const std::vector<double>& xi,
-                double tf,
-                double h,
-                const std::array<double,3>& L0,
-                const std::array<double,3>& A0,
-                double k1,
-                double k2,
-                double mu)
+std::tuple<double, double, double> 
+stormer_verlet_B_error(const std::vector<double>& xi,
+                        double tf,
+                        double h,
+                        const std::array<double,3>& L0,
+                        const std::array<double,3>& A0,
+                        double k1,
+                        double k2,
+                        double mu)
 {
     long long N = static_cast<long long>(std::ceil(tf/h)) + 1;
     // cout << N << endl;
 
-    double maxError = 0;
+    double maxV = 0.0;
+    double maxdL_sq = 0.0;
+    double maxdA_sq = 0.0;
+    LAError currentError;
     double x1, x2, x3, v1, v2, v3, t;
 
     // Set initial values
@@ -191,11 +195,10 @@ double stormer_verlet_B_error(const std::vector<double>& xi,
         v3 = v[2];
         t  = current_time;
 
-        double currentError = getError(x1, x2, x3, v1, v2, v3, L0, A0, k1, k2, mu);
-        if ( currentError >= maxError) {
-            maxError = currentError;
-        }
+        currentError = getError(x1, x2, x3, v1, v2, v3, L0, A0, k1, k2, mu);
+        if ( currentError.error >= maxV) maxV = currentError.error;
+        if ( currentError.distL_sq >= maxdL_sq) maxdL_sq = currentError.distL_sq;
+        if ( currentError.distA_sq >= maxdA_sq) maxdA_sq = currentError.distA_sq;
     }
-
-    return maxError;
+    return {maxV, sqrt(maxdL_sq), sqrt(maxdA_sq)};
 }

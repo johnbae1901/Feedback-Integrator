@@ -1,18 +1,43 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-CSV="results/error_data/errors_vs_h.csv"
-OUT="./results/plots/error/error_kepler.pdf"            # leave empty to view only; set like OUT="plots/error_curve.png" or ".pdf"
-TITLE="Error vs Step Size (log-log)"
+# ---- Inputs produced by your C++ run ----
+ERRORS_CSV="results/error_data/errors_vs_h.csv"
+MAXDL_CSV="results/error_data/maxdL_vs_h.csv"
+MAXDA_CSV="results/error_data/maxdA_vs_h.csv"
 
-PY="python3"
+# ---- Output (empty => show interactively) ----
+OUT="results/plots/error/error_kepler.pdf"   # e.g., .png/.pdf; set "" to just view
+TITLE=""
+
+PY=${PY:-python3}
 SCRIPT="./plotters/plot_errors_loglog.py"
 
-mkdir -p "$(dirname "${CSV}")" || true
+# Verify CSVs exist
+for f in "${ERRORS_CSV}" "${MAXDL_CSV}" "${MAXDA_CSV}"; do
+  if [[ ! -f "${f}" ]]; then
+    echo "Missing CSV: ${f}" >&2
+    exit 1
+  fi
+done
 
-if [[ -z "${OUT}" ]]; then
-  "${PY}" "${SCRIPT}" --csv "${CSV}" --title "${TITLE}"
-else
+# Ensure output dir if saving
+if [[ -n "${OUT}" ]]; then
   mkdir -p "$(dirname "${OUT}")"
-  "${PY}" "${SCRIPT}" --csv "${CSV}" --out "${OUT}" --title "${TITLE}"
+fi
+
+# Run
+if [[ -z "${OUT}" ]]; then
+  "${PY}" "${SCRIPT}" \
+    --errors_csv "${ERRORS_CSV}" \
+    --maxdL_csv  "${MAXDL_CSV}" \
+    --maxdA_csv  "${MAXDA_CSV}" \
+    --title "${TITLE}"
+else
+  "${PY}" "${SCRIPT}" \
+    --errors_csv "${ERRORS_CSV}" \
+    --maxdL_csv  "${MAXDL_CSV}" \
+    --maxdA_csv  "${MAXDA_CSV}" \
+    --out "${OUT}" \
+    --title "${TITLE}"
 fi

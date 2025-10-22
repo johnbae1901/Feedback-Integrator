@@ -20,7 +20,6 @@ using namespace std;
 //------------------------------------
 std::array<double,6> dynamics_Euler_feedback_light(const std::array<double,6>& x,
                                             double mu,
-                                            double c,
                                             double h,
                                             double k1,
                                             double k2,
@@ -149,7 +148,6 @@ euler_feedback_adaptive_light(const std::vector<double>& xi,
                         double tf,
                         double h,
                         double mu,
-                        double c,
                         double k1,
                         double k2,
                         const std::array<double,3>& L0,
@@ -193,7 +191,7 @@ euler_feedback_adaptive_light(const std::vector<double>& xi,
 
         // Evaluate dynamics at current_state
         std::array<double,6> F = dynamics_Euler_feedback_light(
-            current_state, mu, c, h, k1, k2, L0, A0, lipConstant, Hmin
+            current_state, mu, h, k1, k2, L0, A0, lipConstant, Hmin
         );
 
         // next_state = current_state + h*F
@@ -218,23 +216,26 @@ euler_feedback_adaptive_light(const std::vector<double>& xi,
 }
 
 
-double euler_feedback_adaptive_error_light(const std::vector<double>& xi,
-                        double tf,
-                        double h,
-                        double mu,
-                        double c,
-                        double k1,
-                        double k2,
-                        const std::array<double,3>& L0,
-                        const std::array<double,3>& A0,
-                        const int m,
-                        const double lambda,
-                        const double Hmin)
+std::tuple<double, double, double>  
+euler_feedback_adaptive_error_light(const std::vector<double>& xi,
+                                    double tf,
+                                    double h,
+                                    double mu,
+                                    double k1,
+                                    double k2,
+                                    const std::array<double,3>& L0,
+                                    const std::array<double,3>& A0,
+                                    const int m,
+                                    const double lambda,
+                                    const double Hmin)
 {
     // N = ceil(tf/h) + 1
     long long N = static_cast<long long>(std::ceil(tf/h)) + 1;
 
-    double maxError = 0;
+    double maxV = 0.0;
+    double maxdL_sq = 0.0;
+    double maxdA_sq = 0.0;
+    LAError currentError;
     double x1, x2, x3, v1, v2, v3, t;
 
     // Set initial values
@@ -259,7 +260,7 @@ double euler_feedback_adaptive_error_light(const std::vector<double>& xi,
 
         // Evaluate dynamics at current_state
         std::array<double,6> F = dynamics_Euler_feedback_light(
-            current_state, mu, c, h, k1, k2, L0, A0, lipConstant, Hmin
+            current_state, mu, h, k1, k2, L0, A0, lipConstant, Hmin
         );
 
         // next_state = current_state + h*F
@@ -282,11 +283,10 @@ double euler_feedback_adaptive_error_light(const std::vector<double>& xi,
         v3 = current_state[5];
         t  = current_time;
 
-        double currentError = getError(x1, x2, x3, v1, v2, v3, L0, A0, k1, k2, mu);
-        if ( currentError >= maxError) {
-            maxError = currentError;
-        }
+        currentError = getError(x1, x2, x3, v1, v2, v3, L0, A0, k1, k2, mu);
+        if ( currentError.error >= maxV) maxV = currentError.error;
+        if ( currentError.distL_sq >= maxdL_sq) maxdL_sq = currentError.distL_sq;
+        if ( currentError.distA_sq >= maxdA_sq) maxdA_sq = currentError.distA_sq;
     }
-
-    return maxError;
+    return {maxV, sqrt(maxdL_sq), sqrt(maxdA_sq)};
 }

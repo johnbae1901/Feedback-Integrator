@@ -669,7 +669,12 @@ void euler_adaptive(const double R0[3][3],
     N = static_cast<int>(ksave);
 }
 
-double euler_adaptive(const double R0[3][3],
+std::tuple<
+    double, 
+    double, 
+    double, 
+    double> 
+    euler_adaptive(const double R0[3][3],
                     const double Omega0[3],
                     const double I[3][3],
                     double k0, double k1, double k2,
@@ -681,8 +686,11 @@ double euler_adaptive(const double R0[3][3],
     // Calculate the number of steps: N = ceil(tf/h) + 1.
     int N = static_cast<int>(std::ceil(tf/h)) + 1;
 
-    double maxError = 0.0;
-    double currentError = 0.0;
+    double maxV = 0.0;
+    double maxdE = 0.0;
+    double maxdPi_sq = 0.0;
+    double maxdDet_sq = 0.0;
+    ErrorReport currentError;
 
     double I_inv[3][3];
     invertSymmetric3x3(I, I_inv);
@@ -741,8 +749,14 @@ double euler_adaptive(const double R0[3][3],
                 current_state[r][c] = next_state[r][c];
 
         currentError = getError(current_state, I, E0, Pi0, k0, k1, k2);
-        if (currentError >= maxError)
-            maxError = currentError;
+        if (currentError.weighted_sum >= maxV)
+            maxV = currentError.weighted_sum;
+        if (currentError.abs_deltaE >= maxdE)
+            maxdE = currentError.abs_deltaE;
+        if (currentError.deltaPi_norm_sq >= maxdPi_sq)
+            maxdPi_sq = currentError.deltaPi_norm_sq;
+        if (currentError.frob_RT_R_minus_I_sq >= maxdDet_sq)
+            maxdDet_sq = currentError.frob_RT_R_minus_I_sq;
     }
-    return maxError;
+    return {maxV, maxdE, sqrt(maxdPi_sq), sqrt(maxdDet_sq)};
 }

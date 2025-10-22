@@ -5,33 +5,9 @@
 #include <tuple>
 #include <vector>
 
-std::vector<double> getError(
-    const std::vector<double>& x1,
-    const std::vector<double>& x2,
-    const std::vector<double>& x3,
-    const std::vector<double>& v1,
-    const std::vector<double>& v2,
-    const std::vector<double>& v3,
-    const std::vector<double>& L0,
-    const std::vector<double>& A0,
-    double k1,
-    double k2,
-    double mu);
+struct LAError { double distL_sq, distA_sq, error; };
 
-double getError(
-    const double& x1,
-    const double& x2,
-    const double& x3,
-    const double& v1,
-    const double& v2,
-    const double& v3,
-    const std::vector<double>& L0,
-    const std::vector<double>& A0,
-    double k1,
-    double k2,
-    double mu);
-
-double getError(
+LAError getError(
     const double& x1,
     const double& x2,
     const double& x3,
