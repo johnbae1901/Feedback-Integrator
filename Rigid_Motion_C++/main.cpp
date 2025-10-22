@@ -45,8 +45,8 @@ SaveOpts parse_cli(int argc, char** argv){
 int main(int argc, char** argv)
 {
     SaveOpts save = parse_cli(argc, argv);
-    const int    numOfIter = 5;
-    const vector<double> log_h = linspace(-1.0, -5.0, numOfIter);
+    const int    numOfIter = 10;
+    const vector<double> log_h = linspace(-1.0, -7.0, numOfIter);
 
     const double tf = 1e3;
     const double L_update_period = 30.0;
