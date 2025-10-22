@@ -51,7 +51,7 @@ int main(int argc, char** argv)
     const int numOfIter = 10;
     const double L_update_period = 0.1;
     const double lambda = 1.1;
-    const vector<double> log_h = linspace(-1, -5, numOfIter);
+    const vector<double> log_h = linspace(-1, -6, numOfIter);
 
     const vector<double> xi = {1.0, 0.0, 0.0, 0.0, sqrt(1.8), 0.0}; // initial [x1,x2,x3, v1,v2,v3]
     const double ri_array[3] = { xi[0], xi[1], xi[2] };
@@ -62,6 +62,7 @@ int main(int argc, char** argv)
     const double k1 = 4, k2 = 2;
     const double L = 487.69;
     const double c = 1.0; // TODO: delete this variable.
+    const double Hmin = 1e-10;
 
     double maxErrorVanilla[numOfIter], maxErrorVanillaFeedback[numOfIter], maxErrorFeedback[numOfIter], maxErrorAdaptive[numOfIter], maxErrorAdaptiveLight[numOfIter], maxErrorSVB[numOfIter];
     vector<double> t_vanilla(numOfIter), t_feedback_vanilla(numOfIter), t_feedback(numOfIter), t_adaptive(numOfIter), t_SV(numOfIter);
@@ -120,7 +121,7 @@ int main(int argc, char** argv)
             chrono::system_clock::time_point start = chrono::system_clock::now();
             double errorFeedback = euler_feedback_error(xi, tf, h, mu, alpha, k1, k2, L0_array, A0_array);
             chrono::duration<double> duration = chrono::system_clock::now() - start;
-            cout << "CPU time for Vanilla Feedback Euler method : " << duration.count() << endl;
+            cout << "CPU time for Feedback Euler method : " << duration.count() << endl;
             t_feedback[n] = duration.count();
             maxErrorFeedback[n] = move(errorFeedback);
             }
@@ -145,7 +146,7 @@ int main(int argc, char** argv)
             {
             // Run Adaptive Feedback Integrator (Light)
             chrono::system_clock::time_point start = chrono::system_clock::now();
-            double errorAdaptiveLight = euler_feedback_adaptive_error_light(xi, tf, h, mu, c, k1, k2, L0_array, A0_array, m, lambda);
+            double errorAdaptiveLight = euler_feedback_adaptive_error_light(xi, tf, h, mu, c, k1, k2, L0_array, A0_array, m, lambda, Hmin);
             chrono::duration<double> duration = chrono::system_clock::now() - start;
             cout << "CPU time for Adaptive Feedback Euler method (Light) : " << duration.count() << endl;
             t_adaptive[n] = duration.count();
@@ -283,7 +284,7 @@ int main(int argc, char** argv)
         // adaptive
         if (save.methods=="all" || save.methods.find("adaptive")!=std::string::npos){
             int m = static_cast<int>(ceil(L_update_period/h_save));
-            auto [x1, x2, x3, v1, v2, v3, tvec] = euler_feedback_adaptive_light(xi, tf_save, h_save, mu, c, k1, k2, L0_array, A0_array, m, lambda);
+            auto [x1, x2, x3, v1, v2, v3, tvec] = euler_feedback_adaptive_light(xi, tf_save, h_save, mu, c, k1, k2, L0_array, A0_array, m, lambda, Hmin);
             save_state_csv(
                 (path(save.outdir)/("adaptive/h="+std::to_string(h_save)+"/traj.csv")).string(),
                 tvec, x1, x2, x3, v1, v2, v3

@@ -51,6 +51,7 @@ int main(int argc, char** argv)
     const double tf = 1e3;
     const double L_update_period = 30.0;
     const double lambda = 1.1;
+    const double Hmin = 1e-10;
 
     const double k0 = 50.0, k1 = 100.0, k2 = 50.0;
     const double L0 = 1986.0;
@@ -136,7 +137,7 @@ int main(int argc, char** argv)
                                           k0, k1, k2,
                                           E0, Pi0,
                                           tf, h,
-                                          m, lambda);
+                                          m, lambda, Hmin);
                 auto dur  = chrono::duration<double>(chrono::system_clock::now() - start).count();
                 err_adaptive[n] = e;
                 t_adaptive[n]   = dur;
@@ -272,7 +273,7 @@ int main(int argc, char** argv)
             double *R=nullptr,*Om=nullptr,*t=nullptr; int N=0;
             int m = 30; /* update Lipschitz estimate every m steps; adjust as you like */
             euler_adaptive(R0, Omega0, I, k0, k1, k2, E0, Pi0, tf, h_save, m, 1.1 /*lambda*/,
-                        R, Om, t, N);
+                        R, Om, t, N, Hmin);
             save_state_csv( (path(save.outdir)/("adaptive/h="+std::to_string(h_save)+"/traj.csv")).string(),
                             t, Om, R, N);
             delete[] R; delete[] Om; delete[] t;

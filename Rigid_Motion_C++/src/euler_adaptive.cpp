@@ -215,7 +215,8 @@ void dynamics_adaptive(const double state[3][4],
                          double k0, double k1, double k2,
                          double E0, const double Pi0[3],
                          double h,
-                         double out[3][4])
+                         double out[3][4],
+                         const double Hmin)
 {
     // 1. Extract R (3x3) and Omega (3x1) from state.
     double R[3][3];
@@ -234,7 +235,7 @@ void dynamics_adaptive(const double state[3][4],
     // 3. Estimate L and compute adaptive gain alpha = 1 / (h * L)
     double L = estimateL(R, Omega);
     // double L = 1986;
-    double alpha = 1.0 / (h * L);
+    double alpha = 1.0 / (h * max(Hmin, L));
     
     // 4. Compute A = R * OmegaHat  (a 3x3 matrix)
     double A[3][3] = {0};
@@ -393,7 +394,8 @@ void dynamics_adaptive_light(const double state[3][4],
                          double k0, double k1, double k2,
                          double E0, const double Pi0[3],
                          double h, double lipConstant,
-                         double out[3][4])
+                         double out[3][4],
+                         const double Hmin)
 {
     // 1. Extract R (3x3) and Omega (3x1) from state.
     double R[3][3];
@@ -410,7 +412,7 @@ void dynamics_adaptive_light(const double state[3][4],
     getSkew(Omega, OmegaHat);
     
     // 3. Estimate L and compute adaptive gain alpha = 1 / (h * L)
-    double alpha = 1.0 / (h * lipConstant);
+    double alpha = 1.0 / (h * max(Hmin, lipConstant));
     
     // 4. Compute A = R * OmegaHat  (a 3x3 matrix)
     double A[3][3] = {0};
@@ -589,7 +591,8 @@ void euler_adaptive(const double R0[3][3],
                     double tf, double h,
                     int m, double lambda,
                     double *&R_out, double *&Omega_out, double *&t_out,
-                    int &N)
+                    int &N,
+                    const double Hmin)
 {
     // Calculate the number of steps: N = ceil(tf/h) + 1.
     N = static_cast<int>(std::ceil(tf/h)) + 1;
@@ -640,7 +643,7 @@ void euler_adaptive(const double R0[3][3],
 
         // Compute the state derivative using the feedback dynamics.
         double dstate[3][4];
-        dynamics_adaptive_light(current_state, I, k0, k1, k2, E0, Pi0, h, lipConstant, dstate);
+        dynamics_adaptive_light(current_state, I, k0, k1, k2, E0, Pi0, h, lipConstant, dstate, Hmin);
         
         // Compute next_state = current_state + h * dstate.
         double next_state[3][4];
@@ -682,7 +685,8 @@ double euler_adaptive(const double R0[3][3],
                     double k0, double k1, double k2,
                     double E0, const double Pi0[3],
                     double tf, double h,
-                    int m, double lambda)
+                    int m, double lambda,
+                    const double Hmin)
 {
     // Calculate the number of steps: N = ceil(tf/h) + 1.
     int N = static_cast<int>(std::ceil(tf/h)) + 1;
@@ -728,7 +732,7 @@ double euler_adaptive(const double R0[3][3],
 
         // Compute the state derivative using the feedback dynamics.
         double dstate[3][4];
-        dynamics_adaptive_light(current_state, I, k0, k1, k2, E0, Pi0, h, lipConstant, dstate);
+        dynamics_adaptive_light(current_state, I, k0, k1, k2, E0, Pi0, h, lipConstant, dstate, Hmin);
         
         // Compute next_state = current_state + h * dstate.
         double next_state[3][4];
