@@ -51,7 +51,7 @@ int main(int argc, char** argv)
     const int numOfIter = 10;
     const double L_update_period = 0.1;
     const double lambda = 1.1;
-    const vector<double> log_h = linspace(-1, -6, numOfIter);
+    const vector<double> log_h = linspace(-1, -5, numOfIter);
 
     const vector<double> xi = {1.0, 0.0, 0.0, 0.0, sqrt(1.8), 0.0}; // initial [x1,x2,x3, v1,v2,v3]
     const double ri_array[3] = { xi[0], xi[1], xi[2] };
@@ -226,6 +226,23 @@ int main(int argc, char** argv)
     }
     fout.close();
     std::cout << "[SAVE] Wrote error_data/errors_vs_h.csv\n";
+
+    // Saving CPU time data
+    std::filesystem::create_directories("results/cpu_time");
+    std::ofstream f("results/cpu_time/cpu_time_vs_h_all.csv");
+    f << "h,log10_h,vanilla,vanilla_feedback,feedback,adaptive,SV\n";
+    for (int i = 0; i < numOfIter; ++i) {
+        const double h_i = std::pow(10.0, log_h[i]);
+        f << h_i << ","
+          << std::log10(h_i) << ","
+          << t_vanilla[i] << ","
+          << t_feedback_vanilla[i] << ","
+          << t_feedback[i] << ","
+          << t_adaptive[i] << ","
+          << t_SV[i] << "\n";
+    }
+    f.close();
+    std::cout << "[SAVE] Wrote cpu_time/cpu_time_vs_h_all.csv\n";
 
     // Saving trajectrories
     if (save.enable) {

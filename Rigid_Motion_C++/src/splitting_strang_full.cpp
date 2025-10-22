@@ -35,17 +35,19 @@ void splitting_strang_full(
     double*& t_hist,
     int& N_out
 ) {
-    const int N = static_cast<int>(std::ceil(tf / h));
-    N_out = N;
+    const long long N_total = static_cast<long long>(std::ceil(tf / h)) + 1;
+
+    const int stride = 1000;
+    const long long approx = 1 + ((N_total - 1) + stride - 1) / stride;
 
     const double I1 = I[0][0], I2 = I[1][1], I3 = I[2][2];
 
-    R_hist     = new double[9*N];
-    Omega_hist = new double[3*N];
-    t_hist     = new double[N];
+    R_hist     = new double[9 * approx];
+    Omega_hist = new double[3 * approx];
+    t_hist     = new double[approx];
 
     double R[3][3]; mat3_copy(R0, R);
-    double y[3] = { I1*Omega0[0], I2*Omega0[1], I3*Omega0[2] };
+    double y[3] = { I1*Omega0[0], I2*Omega0[1], I3*Omega0[2] }; // y = I * Omega
 
     auto rotX = [](double th, double S[3][3]) {
         const double c = std::cos(th), s = std::sin(th);
@@ -66,17 +68,25 @@ void splitting_strang_full(
         S[2][0]=0.0; S[2][1]=0.0; S[2][2]=1.0;
     };
 
-    auto save_R = [&](int k){
-        const int base = 9*k;
+    auto save_R = [&](long long k){
+        const long long base = 9*k;
         for (int i=0;i<3;++i)
             for (int j=0;j<3;++j)
                 R_hist[base + 3*i + j] = R[i][j];
     };
 
     double S[3][3], ST[3][3], Rtmp[3][3];
+
+    long long k = 0;
     double t = 0.0;
 
-    for (int k = 0; k < N; ++k) {
+    Omega_hist[3*k+0] = y[0]/I1;
+    Omega_hist[3*k+1] = y[1]/I2;
+    Omega_hist[3*k+2] = y[2]/I3;
+    save_R(k);
+    ++k;
+
+    for (long long i = 0; i < N_total - 1; ++i) {
         // Strang step
         {
             const double theta = (y[2]/I3)*(h*0.5);
@@ -120,11 +130,17 @@ void splitting_strang_full(
         }
 
         t += h;
-        // Save
-        t_hist[k] = t;
-        Omega_hist[3*k+0] = y[0]/I1;
-        Omega_hist[3*k+1] = y[1]/I2;
-        Omega_hist[3*k+2] = y[2]/I3;
-        save_R(k);
+
+        const bool periodic_save = ((i + 1) % stride == 0);
+        const bool is_last       = (i == N_total - 2);
+        if (periodic_save || (is_last && !periodic_save)) {
+            t_hist[k] = t;
+            Omega_hist[3*k+0] = y[0]/I1;
+            Omega_hist[3*k+1] = y[1]/I2;
+            Omega_hist[3*k+2] = y[2]/I3;
+            save_R(k);
+            ++k;
+        }
     }
+    N_out = static_cast<int>(k);
 }

@@ -217,71 +217,67 @@ void euler_feedback(const double R0[3][3],
                     double *&R_out, double *&Omega_out, double *&t_out,
                     int &N)
 {
-    // Calculate the number of steps: N = ceil(tf/h) + 1.
-    N = static_cast<int>(std::ceil(tf/h)) + 1;
-    
-    // Allocate dynamic arrays for outputs.
-    // R_out is a 3x3xN array stored in a linear array (9 elements per step).
-    R_out = new double[9 * N];
-    // Omega_out is a 3xN array.
-    Omega_out = new double[3 * N];
-    // t_out is a 1xN array.
-    t_out = new double[N];
+    const long long N_total = static_cast<long long>(std::ceil(tf / h)) + 1;
 
+    const int stride = 1000;
+    const long long approx = 1 + ((N_total - 1) + stride - 1) / stride;
+
+    R_out     = new double[9 * approx];   // 3x3 블록 * approx
+    Omega_out = new double[3 * approx];   // 3 * approx
+    t_out     = new double[approx];
+
+    // I^{-1}
     double I_inv[3][3];
     invertSymmetric3x3(I, I_inv);
-    
-    // Combine the initial rotation R0 and angular velocity Omega0 into current_state (3x4 array).
+
     double current_state[3][4];
-    for (int i = 0; i < 3; i++) {
-        // Columns 0-2: rotation matrix R0.
-        for (int j = 0; j < 3; j++) {
-            current_state[i][j] = R0[i][j];
-        }
-        // Column 3: angular velocity Omega0.
-        current_state[i][3] = Omega0[i];
+    for (int r = 0; r < 3; ++r) {
+        for (int c = 0; c < 3; ++c) current_state[r][c] = R0[r][c];
+        current_state[r][3] = Omega0[r];
     }
-    
     double current_time = 0.0;
-    
-    // Euler integration loop.
-    for (int i = 0; i < N; i++) {
-        // Compute the state derivative using the feedback dynamics.
+
+    long long k = 0;
+
+    for (int r = 0; r < 3; ++r) {
+        R_out[k*9 + r*3 + 0] = current_state[r][0];
+        R_out[k*9 + r*3 + 1] = current_state[r][1];
+        R_out[k*9 + r*3 + 2] = current_state[r][2];
+        Omega_out[k*3 + r]   = current_state[r][3];
+    }
+    t_out[k] = current_time;
+    ++k;
+
+    for (long long i = 0; i < N_total - 1; ++i) {
         double dstate[3][4];
         dynamics_feedback(current_state, I, I_inv, k0, k1, k2, E0, Pi0, alpha, dstate);
-        
-        // Compute next_state = current_state + h * dstate.
+
         double next_state[3][4];
-        for (int r = 0; r < 3; r++) {
-            for (int c = 0; c < 4; c++) {
+        for (int r = 0; r < 3; ++r)
+            for (int c = 0; c < 4; ++c)
                 next_state[r][c] = current_state[r][c] + h * dstate[r][c];
-            }
-        }
-        
-        // Update time.
+
         current_time += h;
-        
-        // Store the rotation matrix (columns 0-2) and angular velocity (column 3)
-        // into the output arrays.
-        for (int r = 0; r < 3; r++) {
-            for (int c = 0; c < 3; c++) {
-                // Store each 3x3 matrix consecutively: each step uses 9 doubles.
-                R_out[i * 9 + r * 3 + c] = next_state[r][c];
+
+        const bool periodic_save = ((i + 1) % stride == 0);
+        const bool is_last       = (i == N_total - 2);
+
+        if (periodic_save || (is_last && !periodic_save)) {
+            for (int r = 0; r < 3; ++r) {
+                R_out[k*9 + r*3 + 0] = next_state[r][0];
+                R_out[k*9 + r*3 + 1] = next_state[r][1];
+                R_out[k*9 + r*3 + 2] = next_state[r][2];
+                Omega_out[k*3 + r]   = next_state[r][3];
             }
-            // Omega is stored in a 3xN array.
-            Omega_out[i * 3 + r] = next_state[r][3];
+            t_out[k] = current_time;
+            ++k;
         }
-        
-        // Store the current time.
-        t_out[i] = current_time;
-        
-        // Update current_state for the next iteration.
-        for (int r = 0; r < 3; r++) {
-            for (int c = 0; c < 4; c++) {
+
+        for (int r = 0; r < 3; ++r)
+            for (int c = 0; c < 4; ++c)
                 current_state[r][c] = next_state[r][c];
-            }
-        }
     }
+    N = static_cast<int>(k);
 }
 
 double euler_feedback(const double R0[3][3],
