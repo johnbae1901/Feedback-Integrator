@@ -117,7 +117,7 @@ int main(int argc, char** argv)
                 auto [e, maxdE, maxdPi, maxdDet] = euler_feedback(R0, Omega0, I,
                                                     k0, k1, k2,
                                                     E0, Pi0,
-                                                    1.0,  // keep as-is (not switching to 1/(h*L0_const) to preserve original behavior)
+                                                    1.0,
                                                     tf, h);
                 auto dur  = chrono::duration<double>(chrono::system_clock::now() - start).count();
                 err_feedback_vanilla[n] = e;
@@ -131,12 +131,10 @@ int main(int argc, char** argv)
             #pragma omp section
             {
                 auto start = chrono::system_clock::now();
-                // In the original main_rigid, feedback call used a fixed "1.0" parameter.
-                // We keep that behavior to avoid changing algorithmic settings.
                 auto [e, maxdE, maxdPi, maxdDet] = euler_feedback(R0, Omega0, I,
                                                     k0, k1, k2,
                                                     E0, Pi0,
-                                                    alpha,  // keep as-is (not switching to 1/(h*L0_const) to preserve original behavior)
+                                                    alpha,
                                                     tf, h);
                 auto dur  = chrono::duration<double>(chrono::system_clock::now() - start).count();
                 err_feedback[n] = e;

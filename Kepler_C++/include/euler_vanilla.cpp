@@ -110,7 +110,8 @@ euler_vanilla(const std::vector<double>& xi, double tf, double h, double mu)
 }
 
 
-double euler_vanilla_error(const std::vector<double>& xi, double tf, double h, 
+std::tuple<double, double, double>
+        euler_vanilla_error(const std::vector<double>& xi, double tf, double h, 
                             const std::array<double,3>& L0,
                             const std::array<double,3>& A0,
                             double k1,
@@ -119,9 +120,11 @@ double euler_vanilla_error(const std::vector<double>& xi, double tf, double h,
 {
     // Number of points we will store
     long long N = static_cast<long long>(std::ceil(tf / h)) + 1;
-    // cout << N << endl;
     
-    double maxError = 0;
+    double maxV = 0.0;
+    double maxdL_sq = 0.0;
+    double maxdA_sq = 0.0;
+    LAError currentError;
     double x1, x2, x3, v1, v2, v3, t;
 
     // Set initial values
@@ -136,20 +139,16 @@ double euler_vanilla_error(const std::vector<double>& xi, double tf, double h,
     // Euler integration loop
     for(int i = 0; i < N - 1; ++i)
     {
-        // Compute the derivative at the current state
         std::array<double,6> F = dynamics_Euler(current_state, mu);
-        // Advance one step: next_state = current_state + h * F
         std::array<double,6> next_state;
         for(int j = 0; j < 6; ++j) {
             next_state[j] = current_state[j] + h * F[j];
         }
         double next_time = current_time + h;
 
-        // Update
         current_state = next_state;
         current_time  = next_time;
 
-        // Store results for step i+1
         x1 = current_state[0];
         x2 = current_state[1];
         x3 = current_state[2];
@@ -158,11 +157,10 @@ double euler_vanilla_error(const std::vector<double>& xi, double tf, double h,
         v3 = current_state[5];
         t  = current_time;
 
-        double currentError = getError(x1, x2, x3, v1, v2, v3, L0, A0, k1, k2, mu);
-        if ( currentError >= maxError) {
-            maxError = currentError;
-        }
+        currentError = getError(x1, x2, x3, v1, v2, v3, L0, A0, k1, k2, mu);
+        if ( currentError.error >= maxV) maxV = currentError.error;
+        if ( currentError.distL_sq >= maxdL_sq) maxdL_sq = currentError.distL_sq;
+        if ( currentError.distA_sq >= maxdA_sq) maxdA_sq = currentError.distA_sq;
     }
-
-    return maxError;
+    return {maxV, sqrt(maxdL_sq), sqrt(maxdA_sq)};
 }
