@@ -26,7 +26,8 @@ std::array<double,6> dynamics_Euler_feedback_light(const std::array<double,6>& x
                                             double k2,
                                             const std::array<double,3>& L0,
                                             const std::array<double,3>& A0,
-                                            const double lipConstant)
+                                            const double lipConstant, 
+                                            const double Hmin)
 {
     // Expect x.size()=6: x=[x1,x2,x3, v1,v2,v3]
     double r[3] = { x[0], x[1], x[2] };
@@ -52,10 +53,7 @@ std::array<double,6> dynamics_Euler_feedback_light(const std::array<double,6>& x
     double deltaA[3] = { A[0] - A0[0], A[1] - A0[1], A[2] - A0[2] };
 
     // alpha = 1 / (h * lipConstant)
-    double alpha = 0.0;
-    if(lipConstant > 1.0e-14){
-        alpha = 1.0 / (h * lipConstant);
-    }
+    double alpha =1.0 / (h * max(Hmin, lipConstant));
 
     // delVx
     // = k1 * cross(v, deltaL)
@@ -157,24 +155,26 @@ euler_feedback_adaptive_light(const std::vector<double>& xi,
                         const std::array<double,3>& L0,
                         const std::array<double,3>& A0,
                         const int m,
-                        const double lambda)
+                        const double lambda,
+                        const double Hmin)
 {
     // N = ceil(tf/h) + 1
     long long N = static_cast<long long>(std::ceil(tf/h)) + 1;
-    cout << N << endl;
 
-    std::vector<double> x1(N), x2(N), x3(N);
-    std::vector<double> v1(N), v2(N), v3(N);
-    std::vector<double> t(N);
+    const int stride = 1000;
+    const long long approx = 1 + (N - 1) / stride + 1;
+    vector<double> x1; x1.reserve(approx);
+    vector<double> x2; x2.reserve(approx);
+    vector<double> x3; x3.reserve(approx);
+    vector<double> v1; v1.reserve(approx);
+    vector<double> v2; v2.reserve(approx);
+    vector<double> v3; v3.reserve(approx);
+    vector<double> t;  t.reserve(approx);
 
-    // Initialize
-    x1[0] = xi[0];
-    x2[0] = xi[1];
-    x3[0] = xi[2];
-    v1[0] = xi[3];
-    v2[0] = xi[4];
-    v3[0] = xi[5];
-    t [0] = 0.0;
+    // Set initial values
+    x1.push_back(xi[0]);  x2.push_back(xi[1]);  x3.push_back(xi[2]);
+    v1.push_back(xi[3]);  v2.push_back(xi[4]);  v3.push_back(xi[5]);
+    t.push_back(0.0);
 
     // Current state/time
     std::array<double,6> current_state = {x1[0], x2[0], x3[0], v1[0], v2[0], v3[0]};
@@ -193,7 +193,7 @@ euler_feedback_adaptive_light(const std::vector<double>& xi,
 
         // Evaluate dynamics at current_state
         std::array<double,6> F = dynamics_Euler_feedback_light(
-            current_state, mu, c, h, k1, k2, L0, A0, lipConstant
+            current_state, mu, c, h, k1, k2, L0, A0, lipConstant, Hmin
         );
 
         // next_state = current_state + h*F
@@ -203,20 +203,17 @@ euler_feedback_adaptive_light(const std::vector<double>& xi,
         }
         double next_time = current_time + h;
 
-        // Store in x1(i), x2(i), ...
-        x1[i] = current_state[0];
-        x2[i] = current_state[1];
-        x3[i] = current_state[2];
-        v1[i] = current_state[3];
-        v2[i] = current_state[4];
-        v3[i] = current_state[5];
-        t [i] = current_time;
-
-        // Update
         current_state = next_state;
         current_time  = next_time;
-    }
 
+        const bool periodic_save = ((i + 1) % stride == 0);
+        const bool is_last       = (i == N - 2);
+        if (periodic_save || (is_last && !periodic_save)) {
+            x1.push_back(current_state[0]); x2.push_back(current_state[1]); x3.push_back(current_state[2]);
+            v1.push_back(current_state[3]); v2.push_back(current_state[4]); v3.push_back(current_state[5]);
+            t .push_back(current_time);
+        }
+    }
     return {x1, x2, x3, v1, v2, v3, t};
 }
 
@@ -231,7 +228,8 @@ double euler_feedback_adaptive_error_light(const std::vector<double>& xi,
                         const std::array<double,3>& L0,
                         const std::array<double,3>& A0,
                         const int m,
-                        const double lambda)
+                        const double lambda,
+                        const double Hmin)
 {
     // N = ceil(tf/h) + 1
     long long N = static_cast<long long>(std::ceil(tf/h)) + 1;
@@ -261,7 +259,7 @@ double euler_feedback_adaptive_error_light(const std::vector<double>& xi,
 
         // Evaluate dynamics at current_state
         std::array<double,6> F = dynamics_Euler_feedback_light(
-            current_state, mu, c, h, k1, k2, L0, A0, lipConstant
+            current_state, mu, c, h, k1, k2, L0, A0, lipConstant, Hmin
         );
 
         // next_state = current_state + h*F
@@ -284,10 +282,10 @@ double euler_feedback_adaptive_error_light(const std::vector<double>& xi,
         v3 = current_state[5];
         t  = current_time;
 
-        // double currentError = getError(x1, x2, x3, v1, v2, v3, L0, A0, k1, k2, mu);
-        // if ( currentError >= maxError) {
-        //     maxError = currentError;
-        // }
+        double currentError = getError(x1, x2, x3, v1, v2, v3, L0, A0, k1, k2, mu);
+        if ( currentError >= maxError) {
+            maxError = currentError;
+        }
     }
 
     return maxError;

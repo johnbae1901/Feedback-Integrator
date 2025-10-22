@@ -27,7 +27,8 @@ add_executable(euler_feedback main.cpp
                             include/euler_feedback_adaptive_light.cpp
                             include/getError.cpp
                             include/linspace.cpp
-                            include/estimateL.cpp)
+                            include/estimateL.cpp
+                            include/csv_io.cpp)
 
 add_executable(measure_time main_time_comparison.cpp
                         include/basic_operations.cpp

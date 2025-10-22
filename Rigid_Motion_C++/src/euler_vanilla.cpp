@@ -77,63 +77,71 @@ void euler_vanilla(const double R0[3][3],
                    double *&R_out, double *&Omega_out, double *&t_out,
                    int &N)
 {
-    // Determine the number of time steps. (Equivalent to: N = ceil(tf/h) + 1)
-    N = static_cast<int>(std::ceil(tf/h)) + 1;
-    
-    // Allocate storage for R, Omega, and t.
-    // R_out: a 3x3xN array stored in row-major order (each 3x3 block contains 9 elements).
-    R_out = new double[9 * N];
-    // Omega_out: a 3xN array.
-    Omega_out = new double[3 * N];
-    // t_out: a 1D array of length N.
-    t_out = new double[N];
-    
-    // Set up the initial state as a 3x4 array.
-    // The first three columns are the initial rotation matrix R0, and
-    // the fourth column is the initial angular velocity Omega0.
+    // 총 상태 샘플 수(이상적): t=0 포함 ⇒ N_total = ceil(tf/h) + 1
+    const long long N_total = static_cast<long long>(std::ceil(tf / h)) + 1;
+
+    const int stride = 1000;
+    const long long approx = 1 + ((N_total - 1) + stride - 1) / stride;  // = 1 + ceil((N_total-1)/stride)
+
+    // 출력 버퍼를 approx에 맞춰 할당 (R: 3x3 블록, Omega: 3, t: 1)
+    R_out     = new double[9 * approx];
+    Omega_out = new double[3 * approx];
+    t_out     = new double[approx];
+
+    // 현재 상태(3x4: R[3x3] | Omega[3x1])
     double current_state[3][4];
-    for (int i = 0; i < 3; i++) {
-        for (int j = 0; j < 3; j++)
-            current_state[i][j] = R0[i][j];
-        current_state[i][3] = Omega0[i];
+    for (int r = 0; r < 3; ++r) {
+        for (int c = 0; c < 3; ++c) current_state[r][c] = R0[r][c];
+        current_state[r][3] = Omega0[r];
     }
-    
     double current_time = 0.0;
-    
-    // Euler integration loop.
-    for (int i = 0; i < N; i++) {
-        // Compute the state derivative dstate = dynamicsEuler(current_state, I).
+
+    // 저장 인덱스
+    long long k = 0;
+
+    // [초기 샘플] t=0 저장
+    for (int r = 0; r < 3; ++r) {
+        R_out[k*9 + r*3 + 0] = current_state[r][0];
+        R_out[k*9 + r*3 + 1] = current_state[r][1];
+        R_out[k*9 + r*3 + 2] = current_state[r][2];
+        Omega_out[k*3 + r]   = current_state[r][3];
+    }
+    t_out[k] = current_time;
+    ++k;
+
+    for (long long i = 0; i < N_total - 1; ++i) {
         double dstate[3][4];
         dynamics_euler(current_state, I, dstate);
-        
-        // Compute next_state = current_state + h * dstate.
+
         double next_state[3][4];
-        for (int r = 0; r < 3; r++) {
-            for (int c = 0; c < 4; c++)
+        for (int r = 0; r < 3; ++r) {
+            for (int c = 0; c < 4; ++c) {
                 next_state[r][c] = current_state[r][c] + h * dstate[r][c];
-        }
-        
-        // Update current time.
-        current_time += h;
-        
-        // Store the rotation matrix (columns 0-2) and angular velocity (column 3)
-        // into the output arrays.
-        for (int r = 0; r < 3; r++) {
-            for (int c = 0; c < 3; c++) {
-                // Each 3x3 R block is stored consecutively in R_out.
-                R_out[i*9 + r*3 + c] = next_state[r][c];
             }
-            // Omega is stored as a 3xN array.
-            Omega_out[i*3 + r] = next_state[r][3];
         }
-        // Store the current time.
-        t_out[i] = current_time;
-        
-        // Prepare for next iteration.
-        for (int r = 0; r < 3; r++)
-            for (int c = 0; c < 4; c++)
+        current_time += h;
+
+        const bool periodic_save = ((i + 1) % stride == 0);
+        const bool is_last       = (i == N_total - 2);
+
+        if (periodic_save || (is_last && !periodic_save)) {
+            // next_state를 슬롯 k에 기록
+            for (int r = 0; r < 3; ++r) {
+                R_out[k*9 + r*3 + 0] = next_state[r][0];
+                R_out[k*9 + r*3 + 1] = next_state[r][1];
+                R_out[k*9 + r*3 + 2] = next_state[r][2];
+                Omega_out[k*3 + r]   = next_state[r][3];
+            }
+            t_out[k] = current_time;
+            ++k;
+        }
+
+        // 다음 루프 준비
+        for (int r = 0; r < 3; ++r)
+            for (int c = 0; c < 4; ++c)
                 current_state[r][c] = next_state[r][c];
     }
+    N = static_cast<int>(k);
 }
 
 double euler_vanilla(const double R0[3][3],

@@ -2,16 +2,16 @@
 set -Eeuo pipefail
 
 # Default params (can be overridden via env or CLI)
-EXE="./build/main"                 # 실행 파일 경로
+EXE="./build/euler_feedback"                 # 실행 파일 경로
 OUTDIR="./results/trajectory_data"                # 출력 루트 디렉토리
-METHODS="all"     # "all" 또는 콤마로 구분: vanilla,feedback,adaptive,strang
-HS=("1e-4")                  # 스텝 사이즈 목록: ("1e-3" "1e-4")
+METHODS="all"     # "all" 또는 콤마로 구분: vanilla,feedback,adaptive,SV
+HS=("1e-3")                  # 스텝 사이즈 목록: ("1e-3" "1e-4")
 BUILD=1                      # 1로 두면 CMake 빌드 수행
 VERBOSE=0                    # 1이면 실행 커맨드 echo
 
 usage() {
   cat <<'USAGE'
-Usage: ./run_save.sh [--exe ./main] [--outdir traj] [--methods vanilla,strang|all] [--hs 1e-3,1e-4] [--build]
+Usage: ./run_save.sh [--exe ./main] [--outdir traj] [--methods vanilla,SV|all] [--hs 1e-3,1e-4] [--build]
 Environment variables also supported: EXE, OUTDIR, METHODS, HS, BUILD=1
 
 Examples:

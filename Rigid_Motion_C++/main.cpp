@@ -51,6 +51,7 @@ int main(int argc, char** argv)
     const double tf = 1e3;
     const double L_update_period = 30.0;
     const double lambda = 1.1;
+    const double Hmin = 1e-10;
 
     const double k0 = 50.0, k1 = 100.0, k2 = 50.0;
     const double L0 = 1986.0;
@@ -136,7 +137,7 @@ int main(int argc, char** argv)
                                           k0, k1, k2,
                                           E0, Pi0,
                                           tf, h,
-                                          m, lambda);
+                                          m, lambda, Hmin);
                 auto dur  = chrono::duration<double>(chrono::system_clock::now() - start).count();
                 err_adaptive[n] = e;
                 t_adaptive[n]   = dur;
@@ -215,24 +216,26 @@ int main(int argc, char** argv)
     fout.close();
     std::cout << "[SAVE] Wrote error_data/errors_vs_h.csv\n";
 
+    // Saving CPU time data
+    std::filesystem::create_directories("results/cpu_time");
+    std::ofstream f("results/cpu_time/cpu_time_vs_h_all.csv");
+    f << "h,log10_h,vanilla,vanilla_feedback,feedback,adaptive,strang\n";
+    for (int i = 0; i < numOfIter; ++i) {
+        const double h_i = std::pow(10.0, log_h[i]);
+        f << h_i << ","
+          << std::log10(h_i) << ","
+          << t_vanilla[i] << ","
+          << t_feedback_vanilla[i] << ","
+          << t_feedback[i] << ","
+          << t_adaptive[i] << ","
+          << t_split_strang[i] << "\n";
+    }
+    f.close();
+    std::cout << "[SAVE] Wrote cpu_time/cpu_time_vs_h_all.csv\n";
+
     // Saving trajectrories
     if (save.enable) {
-        // pick h
-        double h_save = 0.0;
-        int idx_save = 0;
-        if (save.h > 0) {
-            // choose nearest by absolute difference in log-space
-            double best = 1e300;
-            for (int i=0;i<numOfIter;++i){
-                double hi = pow(10.0, log_h[i]);
-                double d = std::abs(std::log10(hi) - std::log10(save.h));
-                if (d < best){ best = d; idx_save = i; h_save = hi; }
-            }
-        } else {
-            idx_save = numOfIter/2;
-            h_save = pow(10.0, log_h[idx_save]);
-        }
-        // double h_save = save.h;
+        double h_save = save.h;
         std::cout << "[SAVE] dumping trajectories for h=" << h_save
                 << " to '" << save.outdir << "'\n";
 
@@ -272,7 +275,7 @@ int main(int argc, char** argv)
             double *R=nullptr,*Om=nullptr,*t=nullptr; int N=0;
             int m = 30; /* update Lipschitz estimate every m steps; adjust as you like */
             euler_adaptive(R0, Omega0, I, k0, k1, k2, E0, Pi0, tf, h_save, m, 1.1 /*lambda*/,
-                        R, Om, t, N);
+                        R, Om, t, N, Hmin);
             save_state_csv( (path(save.outdir)/("adaptive/h="+std::to_string(h_save)+"/traj.csv")).string(),
                             t, Om, R, N);
             delete[] R; delete[] Om; delete[] t;
