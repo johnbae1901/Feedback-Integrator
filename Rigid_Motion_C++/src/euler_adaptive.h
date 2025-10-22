@@ -33,7 +33,12 @@ void euler_adaptive(const double R0[3][3],
                     int &N,
                     const double Hmin);
 
-double euler_adaptive(const double R0[3][3],
+std::tuple<
+    double, 
+    double, 
+    double, 
+    double> 
+    euler_adaptive(const double R0[3][3],
                     const double Omega0[3],
                     const double I[3][3],
                     double k0, double k1, double k2,

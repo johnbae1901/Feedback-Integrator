@@ -77,18 +77,15 @@ void euler_vanilla(const double R0[3][3],
                    double *&R_out, double *&Omega_out, double *&t_out,
                    int &N)
 {
-    // 총 상태 샘플 수(이상적): t=0 포함 ⇒ N_total = ceil(tf/h) + 1
     const long long N_total = static_cast<long long>(std::ceil(tf / h)) + 1;
 
     const int stride = 1000;
     const long long approx = 1 + ((N_total - 1) + stride - 1) / stride;  // = 1 + ceil((N_total-1)/stride)
 
-    // 출력 버퍼를 approx에 맞춰 할당 (R: 3x3 블록, Omega: 3, t: 1)
     R_out     = new double[9 * approx];
     Omega_out = new double[3 * approx];
     t_out     = new double[approx];
 
-    // 현재 상태(3x4: R[3x3] | Omega[3x1])
     double current_state[3][4];
     for (int r = 0; r < 3; ++r) {
         for (int c = 0; c < 3; ++c) current_state[r][c] = R0[r][c];
@@ -144,7 +141,12 @@ void euler_vanilla(const double R0[3][3],
     N = static_cast<int>(k);
 }
 
-double euler_vanilla(const double R0[3][3],
+std::tuple<
+    double, 
+    double, 
+    double, 
+    double> 
+    euler_vanilla(const double R0[3][3],
                     const double Omega0[3],
                     const double I[3][3],
                     const double E0, 
@@ -157,8 +159,11 @@ double euler_vanilla(const double R0[3][3],
     // Determine the number of time steps. (Equivalent to: N = ceil(tf/h) + 1)
     int N = static_cast<int>(std::ceil(tf/h)) + 1;
 
-    double maxError = 0.0;
-    double currentError = 0.0;
+    double maxV = 0.0;
+    double maxdE = 0.0;
+    double maxdPi_sq = 0.0;
+    double maxdDet_sq = 0.0;
+    ErrorReport currentError;
     
     // Set up the initial state as a 3x4 array.
     // The first three columns are the initial rotation matrix R0, and
@@ -194,8 +199,14 @@ double euler_vanilla(const double R0[3][3],
                 current_state[r][c] = next_state[r][c];
         
         currentError = getError(current_state, I, E0, Pi0, k0, k1, k2);
-        if (currentError >= maxError)
-            maxError = currentError;
+        if (currentError.weighted_sum >= maxV)
+            maxV = currentError.weighted_sum;
+        if (currentError.abs_deltaE >= maxdE)
+            maxdE = currentError.abs_deltaE;
+        if (currentError.deltaPi_norm_sq >= maxdPi_sq)
+            maxdPi_sq = currentError.deltaPi_norm_sq;
+        if (currentError.frob_RT_R_minus_I_sq >= maxdDet_sq)
+            maxdDet_sq = currentError.frob_RT_R_minus_I_sq;
     }
-    return maxError;
+    return {maxV, maxdE, sqrt(maxdPi_sq), sqrt(maxdDet_sq)};
 }

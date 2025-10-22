@@ -62,7 +62,7 @@ def main():
         ('vanilla_feedback', 'Feedback (unity gain)',         's'),
         ('feedback',         r'Feedback $(1/hL)$',            '^'),
         ('adaptive',         'Adaptive Feedback',             'D'),
-        ('SV',               'Splitting method',         'v'),
+        ('strang',           'Splitting method',              'v'),
     ]
     for key, label, marker in order:
         if key in d:

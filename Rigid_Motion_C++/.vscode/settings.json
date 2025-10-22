@@ -66,6 +66,8 @@
         "sstream": "cpp",
         "unordered_map": "cpp",
         "algorithm": "cpp",
-        "filesystem": "cpp"
+        "filesystem": "cpp",
+        "fstream": "cpp",
+        "stack": "cpp"
     }
 }

@@ -7,6 +7,14 @@ import matplotlib as mpl
 mpl.rcParams['pdf.fonttype'] = 42
 mpl.rcParams['ps.fonttype']  = 42
 
+METHOD_LABELS = [
+    ("vanilla",            "Euler's method",             'o'),
+    ("vanilla_feedback",   "Feedback (unity gain)",      's'),
+    ("feedback",           r"Feedback $(1/hL)$",         '^'),
+    ("adaptive",           "Adaptive Feedback",          'D'),
+    ("strang",             "Splitting method",           'v'),
+]
+
 def read_wide_csv(path):
     with open(path, 'r', newline='') as f:
         rdr = csv.DictReader(f)
@@ -21,43 +29,118 @@ def read_wide_csv(path):
     return (np.array(hs),
             np.array(v1), np.array(v2), np.array(v3), np.array(v4), np.array(v5))
 
+def positive_mask(*arrays):
+    """Return mask where all arrays are strictly positive at the same indices."""
+    mask = np.ones_like(arrays[0], dtype=bool)
+    for a in arrays:
+        mask &= (a > 0)
+    return mask
+
+def plot_panel(ax, h, series_list, colors, title, ylabel):
+    # series_list: list of (y_array, key, label, marker)
+    handles = []
+    for (y, key, label, marker) in series_list:
+        # log-log; filter to positive entries
+        m = positive_mask(h, y)
+        if not np.any(m):  # nothing to draw
+            continue
+        if colors.get(key) is None:
+            # First panel decides colors; others reuse
+            line, = ax.loglog(h[m], y[m], marker=marker, markersize=10, linewidth=2.4, label=label)
+            colors[key] = line.get_color()
+            handles.append(line)
+        else:
+            line, = ax.loglog(h[m], y[m], marker=marker, markersize=10, linewidth=2.4,
+                              label=label, color=colors[key])
+            handles.append(line)
+
+    ax.set_xlabel(r"$h$", fontsize=20)
+    ax.set_ylabel(ylabel, fontsize=20)
+    ax.grid(True, which='both', linestyle='--', alpha=0.8)
+    ax.set_title(title, fontsize=20)
+    ax.tick_params(labelsize=16)
+    return handles
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--csv', default='metrics/errors_vs_h.csv',
-                    help='CSV path produced by main.cpp')
-    ap.add_argument('--out', default=None,
-                    help='If set, save to this path (extension decides format, e.g., .png/.pdf)')
-    ap.add_argument('--title', default='Error vs Step Size',
-                    help='Figure title')
+    ap.add_argument('--errors_csv',  default='results/error_data/errors_vs_h.csv',
+                    help='CSV for e (existing error)')
+    ap.add_argument('--maxdE_csv',   default='results/error_data/maxdE_vs_h.csv',
+                    help='CSV for maxdE')
+    ap.add_argument('--maxdPi_csv',  default='results/error_data/maxdPi_vs_h.csv',
+                    help='CSV for maxdPi')
+    ap.add_argument('--maxdDet_csv', default='results/error_data/maxdDet_vs_h.csv',
+                    help='CSV for maxdDet')
+    ap.add_argument('--out',   default=None,
+                    help='Save figure to this path (.png/.pdf). If omitted, show on screen.')
+    ap.add_argument('--title', default='Error & Invariant Deviations vs Step Size',
+                    help='Suptitle for the 2x2 figure')
     args = ap.parse_args()
 
-    h, e_van, e_vanfb, e_fb, e_ad, e_str = read_wide_csv(args.csv)
+    # ---- Read all CSVs
+    h_err, e_van, e_vanfb, e_fb, e_ad, e_str = read_wide_csv(args.errors_csv)
+    h_dE,  dE_van, dE_vanfb, dE_fb, dE_ad, dE_str = read_wide_csv(args.maxdE_csv)
+    h_dP,  dP_van, dP_vanfb, dP_fb, dP_ad, dP_str = read_wide_csv(args.maxdPi_csv)
+    h_dD,  dD_van, dD_vanfb, dD_fb, dD_ad, dD_str = read_wide_csv(args.maxdDet_csv)
 
-    # Filter zeros or negatives just in case
-    mask = (h > 0) & (e_van > 0) & (e_vanfb > 0) & (e_fb > 0) & (e_ad > 0) & (e_str > 0)
-    h = h[mask]
-    e_van   = e_van[mask]
-    e_vanfb = e_vanfb[mask]
-    e_fb    = e_fb[mask]
-    e_ad    = e_ad[mask]
-    e_str   = e_str[mask]
+    # ---- Prepare 2x2 figure
+    fig, axs = plt.subplots(2, 2, figsize=(15, 10), constrained_layout=True)
+    colors = {}  # key -> color, fixed by the first panel and reused
 
-    fig, ax = plt.subplots(figsize=(12,8), constrained_layout=True)
-    plt.loglog(h, e_van,   marker='o', markersize=12, linewidth=2.4, label='Euler\'s method')
-    plt.loglog(h, e_vanfb, marker='s', markersize=12, linewidth=2.4, label='Feedback (unity gain)')
-    plt.loglog(h, e_fb,    marker='^', markersize=12, linewidth=2.4, label='Feedback $(1/hL)$')
-    plt.loglog(h, e_ad,    marker='D', markersize=12, linewidth=2.4, label='Adaptive Feedback')
-    plt.loglog(h, e_str,   marker='v', markersize=12, linewidth=2.4, label='Splitting method')
+    # Panel (a)
+    series_err = [
+        (e_van,   "vanilla",           METHOD_LABELS[0][1], METHOD_LABELS[0][2]),
+        (e_vanfb, "vanilla_feedback",  METHOD_LABELS[1][1], METHOD_LABELS[1][2]),
+        (e_fb,    "feedback",          METHOD_LABELS[2][1], METHOD_LABELS[2][2]),
+        (e_ad,    "adaptive",          METHOD_LABELS[3][1], METHOD_LABELS[3][2]),
+        (e_str,   "strang",            METHOD_LABELS[4][1], METHOD_LABELS[4][2]),
+    ]
+    h_a = h_err
+    handles = plot_panel(axs[0,0], h_a, series_err, colors,
+                         title=None, ylabel=r"$\max \ V(x_k)$")
 
-    plt.xlabel('$h$', fontsize=26)
-    plt.ylabel('max $V(x_k)$', fontsize=26)
-    # plt.title(args.title)
-    plt.xticks(fontsize=20)
-    plt.yticks(fontsize=20)
-    plt.grid(True, which='both', linestyle='--', alpha=0.8)
-    plt.legend()
-    plt.legend(fontsize=20, frameon=True, framealpha=0.8)
-    plt.tight_layout()
+    # Panel (b)
+    series_dD = [
+        (dD_van,   "vanilla",          METHOD_LABELS[0][1], METHOD_LABELS[0][2]),
+        (dD_vanfb, "vanilla_feedback", METHOD_LABELS[1][1], METHOD_LABELS[1][2]),
+        (dD_fb,    "feedback",         METHOD_LABELS[2][1], METHOD_LABELS[2][2]),
+        (dD_ad,    "adaptive",         METHOD_LABELS[3][1], METHOD_LABELS[3][2]),
+        (dD_str,   "strang",           METHOD_LABELS[4][1], METHOD_LABELS[4][2]),
+    ]
+    plot_panel(axs[0,1], h_dD, series_dD, colors,
+               title=None, ylabel=r"$\max \ \|R^\top R - 1\|_F$")
+
+    # Panel (c)
+    series_dE = [
+        (dE_van,   "vanilla",          METHOD_LABELS[0][1], METHOD_LABELS[0][2]),
+        (dE_vanfb, "vanilla_feedback", METHOD_LABELS[1][1], METHOD_LABELS[1][2]),
+        (dE_fb,    "feedback",         METHOD_LABELS[2][1], METHOD_LABELS[2][2]),
+        (dE_ad,    "adaptive",         METHOD_LABELS[3][1], METHOD_LABELS[3][2]),
+        (dE_str,   "strang",           METHOD_LABELS[4][1], METHOD_LABELS[4][2]),
+    ]
+    plot_panel(axs[1,0], h_dE, series_dE, colors,
+               title=None, ylabel=r"$\max \ |\Delta E|$")
+
+    # Panel (d)
+    series_dP = [
+        (dP_van,   "vanilla",          METHOD_LABELS[0][1], METHOD_LABELS[0][2]),
+        (dP_vanfb, "vanilla_feedback", METHOD_LABELS[1][1], METHOD_LABELS[1][2]),
+        (dP_fb,    "feedback",         METHOD_LABELS[2][1], METHOD_LABELS[2][2]),
+        (dP_ad,    "adaptive",         METHOD_LABELS[3][1], METHOD_LABELS[3][2]),
+        (dP_str,   "strang",           METHOD_LABELS[4][1], METHOD_LABELS[4][2]),
+    ]
+    plot_panel(axs[1,1], h_dP, series_dP, colors,
+               title=None, ylabel=r"$\max \ |\Delta \pi|$")
+
+    
+
+    # One shared legend (methods), using handles from panel (a)
+    if handles:
+        fig.legend(handles, [hl.get_label() for hl in handles],
+                   loc='outside lower center', ncol=3, frameon=True, framealpha=0.8, fontsize=16)
+
+    # Suptitle
+    fig.suptitle(args.title, fontsize=20)
 
     if args.out:
         root, ext = os.path.splitext(args.out)

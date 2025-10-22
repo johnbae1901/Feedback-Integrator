@@ -11,7 +11,12 @@ void euler_vanilla(const double R0[3][3],
                    double tf, double h,
                    double *&R_out, double *&Omega_out, double *&t_out,
                    int &N);
-double euler_vanilla(const double R0[3][3],
+std::tuple<
+    double, 
+    double, 
+    double, 
+    double> 
+    euler_vanilla(const double R0[3][3],
                     const double Omega0[3],
                     const double I[3][3],
                     const double E0, 

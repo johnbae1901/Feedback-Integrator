@@ -20,7 +20,6 @@ using namespace std;
 //------------------------------------
 std::array<double,6> dynamics_Euler_feedback_light(const std::array<double,6>& x,
                                             double mu,
-                                            double c,
                                             double h,
                                             double k1,
                                             double k2,
@@ -149,7 +148,6 @@ euler_feedback_adaptive_light(const std::vector<double>& xi,
                         double tf,
                         double h,
                         double mu,
-                        double c,
                         double k1,
                         double k2,
                         const std::array<double,3>& L0,
@@ -193,7 +191,7 @@ euler_feedback_adaptive_light(const std::vector<double>& xi,
 
         // Evaluate dynamics at current_state
         std::array<double,6> F = dynamics_Euler_feedback_light(
-            current_state, mu, c, h, k1, k2, L0, A0, lipConstant, Hmin
+            current_state, mu, h, k1, k2, L0, A0, lipConstant, Hmin
         );
 
         // next_state = current_state + h*F
@@ -222,7 +220,6 @@ double euler_feedback_adaptive_error_light(const std::vector<double>& xi,
                         double tf,
                         double h,
                         double mu,
-                        double c,
                         double k1,
                         double k2,
                         const std::array<double,3>& L0,
@@ -259,7 +256,7 @@ double euler_feedback_adaptive_error_light(const std::vector<double>& xi,
 
         // Evaluate dynamics at current_state
         std::array<double,6> F = dynamics_Euler_feedback_light(
-            current_state, mu, c, h, k1, k2, L0, A0, lipConstant, Hmin
+            current_state, mu, h, k1, k2, L0, A0, lipConstant, Hmin
         );
 
         // next_state = current_state + h*F

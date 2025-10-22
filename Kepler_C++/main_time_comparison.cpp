@@ -89,7 +89,7 @@ int main()
         {
         // Find time used for Adaptive Feedback Euler method
         start = chrono::system_clock::now();
-        maxErrorAdaptiveLight = euler_feedback_adaptive_error_light(xi, tf, h, mu, c, k1, k2, L0_array, A0_array, m, lambda, Hmin);
+        maxErrorAdaptiveLight = euler_feedback_adaptive_error_light(xi, tf, h, mu, k1, k2, L0_array, A0_array, m, lambda, Hmin);
         duration = chrono::system_clock::now() - start;
         cout << "CPU time for Adaptive Feedback Euler method (light) : " << duration.count() << endl;
         }

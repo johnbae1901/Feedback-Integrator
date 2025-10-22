@@ -26,18 +26,23 @@ static inline void mat3_copy(const double A[3][3], double B[3][3]) {
             B[i][j] = A[i][j];
 }
 
-double splitting_strang(
-    const double R0[3][3],
-    const double Omega0[3],
-    const double I[3][3],
-    const double E0,
-    const double Pi0[3],
-    const double k0,
-    const double k1,
-    const double k2,
-    double tf,
-    double h
-) {
+std::tuple<
+    double, 
+    double, 
+    double, 
+    double> 
+            splitting_strang(
+            const double R0[3][3],
+            const double Omega0[3],
+            const double I[3][3],
+            const double E0,
+            const double Pi0[3],
+            const double k0,
+            const double k1,
+            const double k2,
+            double tf,
+            double h
+                        ) {
     // Steps follow user's Euler style: N = ceil(tf/h) + 1
     const int N = static_cast<int>(std::ceil(tf / h)) + 1;
 
@@ -68,7 +73,11 @@ double splitting_strang(
     };
 
     double S[3][3], ST[3][3], Rtmp[3][3];
-    double maxError = 0.0;
+    double maxV = 0.0;
+    double maxdE = 0.0;
+    double maxdPi_sq = 0.0;
+    double maxdDet_sq = 0.0;
+    ErrorReport currentError;
 
     // current_state in 3x4 layout for getError(...)
     auto eval_and_update_max = [&](void){
@@ -81,8 +90,15 @@ double splitting_strang(
             current_state[i][2] = R[i][2];
             current_state[i][3] = Omega[i];
         }
-        const double err = getError(current_state, I, E0, Pi0, k0, k1, k2);
-        if (err > maxError) maxError = err;
+        currentError = getError(current_state, I, E0, Pi0, k0, k1, k2);
+        if (currentError.weighted_sum >= maxV)
+            maxV = currentError.weighted_sum;
+        if (currentError.abs_deltaE >= maxdE)
+            maxdE = currentError.abs_deltaE;
+        if (currentError.deltaPi_norm_sq >= maxdPi_sq)
+            maxdPi_sq = currentError.deltaPi_norm_sq;
+        if (currentError.frob_RT_R_minus_I_sq >= maxdDet_sq)
+            maxdDet_sq = currentError.frob_RT_R_minus_I_sq;
     };
 
     for (int k = 0; k < N; ++k) {
@@ -131,6 +147,5 @@ double splitting_strang(
         // Evaluate error after completing the full step
         eval_and_update_max();
     }
-
-    return maxError;
+    return {maxV, maxdE, sqrt(maxdPi_sq), sqrt(maxdDet_sq)};
 }
