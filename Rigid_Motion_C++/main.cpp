@@ -199,8 +199,8 @@ int main(int argc, char** argv)
     }
 
     // Saving error data
-    std::filesystem::create_directories("error_data");
-    std::ofstream fout("error_data/errors_vs_h.csv");
+    std::filesystem::create_directories("results/error_data");
+    std::ofstream fout("results/error_data/errors_vs_h.csv");
     fout << "h,log10_h,vanilla,vanilla_feedback,feedback,adaptive,strang\n";
     for (int i = 0; i < numOfIter; ++i) {
         double h_i = std::pow(10.0, log_h[i]);
@@ -232,6 +232,7 @@ int main(int argc, char** argv)
             idx_save = numOfIter/2;
             h_save = pow(10.0, log_h[idx_save]);
         }
+        // double h_save = save.h;
         std::cout << "[SAVE] dumping trajectories for h=" << h_save
                 << " to '" << save.outdir << "'\n";
 

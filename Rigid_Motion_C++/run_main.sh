@@ -3,9 +3,9 @@ set -Eeuo pipefail
 
 # Default params (can be overridden via env or CLI)
 EXE="./main"                 # 실행 파일 경로
-OUTDIR="trajectory_data"                # 출력 루트 디렉토리
+OUTDIR="./results/trajectory_data"                # 출력 루트 디렉토리
 METHODS="all"     # "all" 또는 콤마로 구분: vanilla,feedback,adaptive,strang
-HS=("1e-3" "1e-4")                  # 스텝 사이즈 목록: ("1e-3" "1e-4")
+HS=("1e-4")                  # 스텝 사이즈 목록: ("1e-3" "1e-4")
 BUILD=1                      # 1로 두면 CMake 빌드 수행
 VERBOSE=0                    # 1이면 실행 커맨드 echo
 

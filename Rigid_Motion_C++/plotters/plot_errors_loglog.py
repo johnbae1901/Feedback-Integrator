@@ -42,18 +42,22 @@ def main():
     e_ad    = e_ad[mask]
     e_str   = e_str[mask]
 
-    plt.figure()
-    plt.loglog(h, e_van,   marker='o', linewidth=1.5, label='Vanilla Euler')
-    plt.loglog(h, e_vanfb, marker='s', linewidth=1.5, label='Vanilla Feedback')
-    plt.loglog(h, e_fb,    marker='^', linewidth=1.5, label='Feedback')
-    plt.loglog(h, e_ad,    marker='D', linewidth=1.5, label='Adaptive')
-    plt.loglog(h, e_str,   marker='v', linewidth=1.5, label='Strang')
+    fig, ax = plt.subplots(figsize=(12,8), constrained_layout=True)
+    plt.loglog(h, e_van,   marker='o', markersize=12, linewidth=2.4, label='Euler\'s method')
+    plt.loglog(h, e_vanfb, marker='s', markersize=12, linewidth=2.4, label='Feedback (unity gain)')
+    plt.loglog(h, e_fb,    marker='^', markersize=12, linewidth=2.4, label='Feedback $(1/hL)$')
+    plt.loglog(h, e_ad,    marker='D', markersize=12, linewidth=2.4, label='Adaptive Feedback')
+    plt.loglog(h, e_str,   marker='v', markersize=12, linewidth=2.4, label='Splitting method')
 
-    plt.xlabel('h')
-    plt.ylabel('Error')
-    plt.title(args.title)
-    plt.grid(True, which='both', linestyle='--', alpha=0.4)
+    plt.xlabel('$h$', fontsize=26)
+    plt.ylabel('max $V(x_k)$', fontsize=26)
+    # plt.title(args.title)
+    plt.xticks(fontsize=20)
+    plt.yticks(fontsize=20)
+    plt.grid(True, which='both', linestyle='--', alpha=0.8)
     plt.legend()
+    plt.legend(fontsize=20, frameon=True, framealpha=0.8)
+    plt.tight_layout()
 
     if args.out:
         root, ext = os.path.splitext(args.out)
