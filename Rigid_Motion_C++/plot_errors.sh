@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-CSV="error_data/errors_vs_h.csv"
-OUT=""            # leave empty to view only; set like OUT="plots/error_curve.png" or ".pdf"
+CSV="results/error_data/errors_vs_h.csv"
+OUT="./results/plots/error/error_rigid_body.pdf"            # leave empty to view only; set like OUT="plots/error_curve.png" or ".pdf"
 TITLE="Error vs Step Size (log-log)"
 
 PY="python3"

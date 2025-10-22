@@ -5,14 +5,14 @@ set -Eeuo pipefail
 # VIEW-ONLY DEFAULTS (no PNG saved)
 PY="python3"
 PYSCRIPT="./plotters/plot_trajectories.py"
-BASE="trajectory_data"
+BASE="results/trajectory_data"
 METHODS=("vanilla" "vanilla_feedback" "feedback" "adaptive" "strang")
 HS=("1e-4")
 VERBOSE=0
 
 # If you later want to save, flip this to 1 and set OUTROOT/OUTNAME.
 SAVE=1
-OUTROOT="plots"
+OUTROOT="results/plots/trajectories"
 OUTNAME="traj"
 USE_TITLE=0
 TITLE_PREFIX="Projection"

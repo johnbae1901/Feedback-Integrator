@@ -69,12 +69,15 @@ def main():
     t, om, R = load_traj(csv_path)
 
     # Plot Omega trajectory
-    fig = plt.figure()
+    fig = plt.figure(figsize=(8.0,8.0), constrained_layout=True)
     ax = fig.add_subplot(111, projection='3d')
-    ax.plot(om[:,0], om[:,1], om[:,2])
-    ax.set_xlabel(r'$\Omega_1$')
-    ax.set_ylabel(r'$\Omega_2$')
-    ax.set_zlabel(r'$\Omega_3$')
+    ax.plot(om[:,0], om[:,1], om[:,2], linewidth=2.4)
+    ax.set_xlabel(r'$\Omega_1$', fontsize=26, labelpad=8)
+    ax.set_ylabel(r'$\Omega_2$', fontsize=26, labelpad=8)
+    ax.set_zlabel(r'$\Omega_3$', fontsize=26, labelpad=8)
+    ax.tick_params(axis='x', labelsize=20)
+    ax.tick_params(axis='y', labelsize=20)
+    ax.tick_params(axis='z', labelsize=20)
     if args.title:
         ax.set_title(args.title)
     # set_equal_3d(ax, om[:,0], om[:,1], om[:,2])
@@ -94,7 +97,7 @@ def main():
         set_equal_3d(ax, om[:,0], om[:,1], om[:,2])
 
     if args.out:
-        plt.savefig(args.out, dpi=300, bbox_inches='tight')
+        plt.savefig(args.out, bbox_inches='tight', transparent=True)
         print(f"Saved 3D trajectory to {args.out}")
     else:
         plt.show()
