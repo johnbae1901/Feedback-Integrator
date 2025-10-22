@@ -262,7 +262,6 @@ int main(int argc, char** argv)
         //     h_save = pow(10.0, log_h[idx_save]);
         // }
         double h_save = save.h;
-        double tf_save = 2000 * T;
         std::cout << "[SAVE] dumping trajectories for h=" << h_save
                 << " to '" << save.outdir << "'\n";
 
@@ -270,8 +269,7 @@ int main(int argc, char** argv)
 
         // vanilla
         if (save.methods=="all" || save.methods.find("vanilla")!=std::string::npos){
-            auto [x1, x2, x3, v1, v2, v3, tvec] = euler_vanilla(xi, tf_save, h_save, mu);
-
+            auto [x1, x2, x3, v1, v2, v3, tvec] = euler_vanilla(xi, tf, h_save, mu);
             save_state_csv(
                 (path(save.outdir)/("vanilla/h="+std::to_string(h_save)+"/traj.csv")).string(),
                 tvec, x1, x2, x3, v1, v2, v3
@@ -281,7 +279,7 @@ int main(int argc, char** argv)
         // vanilla feedback
         if (save.methods=="all" || save.methods.find("vanilla_feedback")!=std::string::npos){
             const double alpha = 1.0;
-            auto [x1, x2, x3, v1, v2, v3, tvec] = euler_feedback(xi, tf_save, h_save, mu, alpha, k1, k2, L0_array, A0_array);
+            auto [x1, x2, x3, v1, v2, v3, tvec] = euler_feedback(xi, tf, h_save, mu, alpha, k1, k2, L0_array, A0_array);
             save_state_csv(
                 (path(save.outdir)/("vanilla_feedback/h="+std::to_string(h_save)+"/traj.csv")).string(),
                 tvec, x1, x2, x3, v1, v2, v3
@@ -291,7 +289,7 @@ int main(int argc, char** argv)
         // feedback
         if (save.methods=="all" || save.methods.find("feedback")!=std::string::npos){
             const double alpha = 1/(h_save * L);
-            auto [x1, x2, x3, v1, v2, v3, tvec] = euler_feedback(xi, tf_save, h_save, mu, alpha, k1, k2, L0_array, A0_array);
+            auto [x1, x2, x3, v1, v2, v3, tvec] = euler_feedback(xi, tf, h_save, mu, alpha, k1, k2, L0_array, A0_array);
             save_state_csv(
                 (path(save.outdir)/("feedback/h="+std::to_string(h_save)+"/traj.csv")).string(),
                 tvec, x1, x2, x3, v1, v2, v3
@@ -301,7 +299,7 @@ int main(int argc, char** argv)
         // adaptive
         if (save.methods=="all" || save.methods.find("adaptive")!=std::string::npos){
             int m = static_cast<int>(ceil(L_update_period/h_save));
-            auto [x1, x2, x3, v1, v2, v3, tvec] = euler_feedback_adaptive_light(xi, tf_save, h_save, mu, c, k1, k2, L0_array, A0_array, m, lambda, Hmin);
+            auto [x1, x2, x3, v1, v2, v3, tvec] = euler_feedback_adaptive_light(xi, tf, h_save, mu, c, k1, k2, L0_array, A0_array, m, lambda, Hmin);
             save_state_csv(
                 (path(save.outdir)/("adaptive/h="+std::to_string(h_save)+"/traj.csv")).string(),
                 tvec, x1, x2, x3, v1, v2, v3
@@ -310,7 +308,7 @@ int main(int argc, char** argv)
 
         // Stormer Verlet
         if (save.methods=="all" || save.methods.find("SV")!=std::string::npos){
-            auto [x1, x2, x3, v1, v2, v3, tvec] = stormer_verlet_B(xi, tf_save, h_save, mu);
+            auto [x1, x2, x3, v1, v2, v3, tvec] = stormer_verlet_B(xi, tf, h_save, mu);
             save_state_csv(
                 (path(save.outdir)/("SV/h="+std::to_string(h_save)+"/traj.csv")).string(),
                 tvec, x1, x2, x3, v1, v2, v3
