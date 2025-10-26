@@ -29,25 +29,9 @@ add_executable(euler_feedback main.cpp
                             include/linspace.cpp
                             include/estimateL.cpp)
 
-add_executable(measure_time main_time_comparison.cpp
-                        include/basic_operations.cpp
-                        include/euler_feedback.cpp
-                        include/euler_vanilla.cpp
-                        include/euler_feedback_adaptive.cpp
-                        include/stormer_verlet_B.cpp
-                        include/euler_feedback_adaptive_light.cpp
-                        include/getError.cpp
-                        include/linspace.cpp
-                        include/estimateL.cpp)
-
 target_link_libraries(euler_feedback PRIVATE Eigen3::Eigen)
-target_link_libraries(measure_time PRIVATE Eigen3::Eigen)
 
 # Link libraries
 target_link_libraries(euler_feedback PRIVATE 
-    ${OpenMP_EXE_LINKER_FLAGS} 
-)
-
-target_link_libraries(measure_time PRIVATE 
     ${OpenMP_EXE_LINKER_FLAGS} 
 )
