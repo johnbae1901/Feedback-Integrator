@@ -7,71 +7,46 @@
 
 using namespace std;
 
-/**
- * @brief Half-step kick1: 
- *        v_temp = v + (h/2) * a(r).
- *        a(r) = -mu * r / ||r||^3
- */
+// half-kick
 static std::array<double,3> kick1(const std::array<double,3>& x,
                                   const std::array<double,3>& v,
-                                  double mu, double h)
+                                  double h,
+                                  const PKParams& P)
 {
-    std::array<double,3> v_temp;
-    // norm(x):
+    std::array<double,3> v_half = v;
     double r = std::sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]);
-    double coeff = -mu / (r*r*r); // acceleration factor
-    for(int i=0; i<3; i++){
-        v_temp[i] = v[i] + 0.5*h*coeff*x[i];
-    }
-    return v_temp;
+    double coeff = -(P.mu/(r*r*r) + 3.0*P.delta/(r*r*r*r*r));
+    v_half[0] += 0.5*h*coeff*x[0];
+    v_half[1] += 0.5*h*coeff*x[1];
+    v_half[2] += 0.5*h*coeff*x[2];
+    return v_half;
 }
 
-/**
- * @brief drift: 
- *        x_next = x + h * v_temp
- */
 static std::array<double,3> drift(const std::array<double,3>& x,
-                                  const std::array<double,3>& v_temp,
+                                  const std::array<double,3>& v_half,
                                   double h)
 {
-    std::array<double,3> x_next;
-    for(int i=0; i<3; i++){
-        x_next[i] = x[i] + h*v_temp[i];
-    }
-    return x_next;
+    return { x[0] + h*v_half[0],
+             x[1] + h*v_half[1],
+             x[2] + h*v_half[2] };
 }
 
-/**
- * @brief kick2: 
- *        v_next = v_temp + (h/2) * a(r_next)
- */
 static std::array<double,3> kick2(const std::array<double,3>& x_next,
-                                  const std::array<double,3>& v_temp,
-                                  double mu, double h)
+                                  const std::array<double,3>& v_half,
+                                  double h,
+                                  const PKParams& P)
 {
-    std::array<double,3> v_next;
+    std::array<double,3> v_next = v_half;
     double r = std::sqrt(x_next[0]*x_next[0]
                        + x_next[1]*x_next[1]
                        + x_next[2]*x_next[2]);
-    double coeff = -mu / (r*r*r);
-    for(int i=0; i<3; i++){
-        v_next[i] = v_temp[i] + 0.5*h*coeff*x_next[i];
-    }
+    double coeff = -(P.mu/(r*r*r) + 3.0*P.delta/(r*r*r*r*r));
+    v_next[0] += 0.5*h*coeff*x_next[0];
+    v_next[1] += 0.5*h*coeff*x_next[1];
+    v_next[2] += 0.5*h*coeff*x_next[2];
     return v_next;
 }
 
-/**
- * @brief stormer_verlet_B integrator for the 6D state:
- *        (x, y, z, vx, vy, vz).
- *
- * @param xi  Initial 6D state: [x, y, z, vx, vy, vz].
- * @param tf  Final time.
- * @param h   Time step.
- * @param mu  Parameter (e.g., gravitational).
- *
- * @return A tuple of 7 vectors:
- *         ( x1, x2, x3, v1, v2, v3, t ).
- */
 std::tuple<
     std::vector<double>,
     std::vector<double>,
@@ -84,11 +59,11 @@ std::tuple<
 stormer_verlet_B(const std::vector<double>& xi,
                  double tf,
                  double h,
-                 double mu)
+                 const PKParams& P)
 {
     long long N = static_cast<long long>(std::ceil(tf/h)) + 1;
 
-    const int stride = 1000;
+    const int stride = 10;
     const long long approx = 1 + (N - 1) / stride + 1;
     vector<double> x1; x1.reserve(approx);
     vector<double> x2; x2.reserve(approx);
@@ -111,13 +86,13 @@ stormer_verlet_B(const std::vector<double>& xi,
     for(int i=0; i<N; ++i)
     {
         // 1) Kick1: half-step velocity
-        std::array<double,3> v_temp = kick1(x, v, mu, h);
+        std::array<double,3> v_half = kick1(x, v, h, P);
 
         // 2) Drift: full-step position
-        std::array<double,3> x_next = drift(x, v_temp, h);
+        std::array<double,3> x_next = drift(x, v_half, h);
 
         // 3) Kick2: half-step velocity
-        std::array<double,3> v_next = kick2(x_next, v_temp, mu, h);
+        std::array<double,3> v_next = kick2(x_next, v_half, h, P);
 
         // Build next state
         x = x_next;
@@ -142,18 +117,16 @@ std::tuple<double, double, double>
     stormer_verlet_B_error(const std::vector<double>& xi,
                             double tf,
                             double h,
-                            const std::array<double,3>& L0,
-                            const std::array<double,3>& A0,
-                            double k1,
-                            double k2,
-                            double mu)
+                            double k1,  // -> kL
+                            double k2,  // -> kE
+                            const PKParams& P)
 {
     long long N = static_cast<long long>(std::ceil(tf/h)) + 1;
 
     double maxV = 0.0;
+    double maxdE_sq = 0.0;
     double maxdL_sq = 0.0;
-    double maxdA_sq = 0.0;
-    LAError currentError;
+    LEError currentError;
     double x1, x2, x3, v1, v2, v3, t;
 
     // Set initial values
@@ -166,16 +139,26 @@ std::tuple<double, double, double>
     std::array<double,3> v = { xi[3], xi[4], xi[5] };
     double current_time = 0.0;
 
+    // ---- compute L0, E0 internally ----
+    const std::array<double,3> L0 = {
+        x2*v3 - x3*v2,
+        x3*v1 - x1*v3,
+        x1*v2 - x2*v1
+    };
+    const double r0  = std::sqrt(x1*x1 + x2*x2 + x3*x3);
+    const double v02 = (v1*v1 + v2*v2 + v3*v3);
+    const double E0  = 0.5*v02 - P.mu/r0 - P.delta/(r0*r0*r0);
+
     for(int i=0; i<N; ++i)
     {
         // 1) Kick1: half-step velocity
-        std::array<double,3> v_temp = kick1(x, v, mu, h);
+        std::array<double,3> v_half = kick1(x, v, h, P);
 
         // 2) Drift: full-step position
-        std::array<double,3> x_next = drift(x, v_temp, h);
+        std::array<double,3> x_next = drift(x, v_half, h);
 
         // 3) Kick2: half-step velocity
-        std::array<double,3> v_next = kick2(x_next, v_temp, mu, h);
+        std::array<double,3> v_next = kick2(x_next, v_half, h, P);
 
         // Build next state
         x = x_next;
@@ -194,10 +177,10 @@ std::tuple<double, double, double>
         v3 = v[2];
         t  = current_time;
 
-        currentError = getError(x1, x2, x3, v1, v2, v3, L0, A0, k1, k2, mu);
+        currentError = getError_PK(x1,x2,x3, v1,v2,v3, L0, E0, k1, k2, P);
         if ( currentError.error >= maxV) maxV = currentError.error;
+        if ( currentError.distE_sq >= maxdE_sq) maxdE_sq = currentError.distE_sq;
         if ( currentError.distL_sq >= maxdL_sq) maxdL_sq = currentError.distL_sq;
-        if ( currentError.distA_sq >= maxdA_sq) maxdA_sq = currentError.distA_sq;
     }
-    return {maxV, sqrt(maxdL_sq), sqrt(maxdA_sq)};
+    return {maxV, sqrt(maxdE_sq), sqrt(maxdL_sq)};
 }

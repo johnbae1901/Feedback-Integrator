@@ -64,15 +64,15 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--errors_csv', default='results/error_data/errors_vs_h.csv')
     ap.add_argument('--maxdL_csv',  default='results/error_data/maxdL_vs_h.csv')
-    ap.add_argument('--maxdA_csv',  default='results/error_data/maxdA_vs_h.csv')
+    ap.add_argument('--maxdE_csv',  default='results/error_data/maxdE_vs_h.csv')
     ap.add_argument('--out',        default=None, help='Output path (.png/.pdf). If omitted, shows interactively.')
-    ap.add_argument('--title',      default='Error, max dL, max dA vs step size')
+    ap.add_argument('--title',      default='Error, max dL, max dE vs step size')
     args = ap.parse_args()
 
     # Read CSVs
     h_err,  err_by_key  = read_wide_csv(args.errors_csv)
     h_dL,   dL_by_key   = read_wide_csv(args.maxdL_csv)
-    h_dA,   dA_by_key   = read_wide_csv(args.maxdA_csv)
+    h_dE,   dE_by_key   = read_wide_csv(args.maxdE_csv)
 
     # Figure with 1x3 panels
     fig, axs = plt.subplots(1, 3, figsize=(18, 6), constrained_layout=True)
@@ -86,9 +86,9 @@ def main():
     plot_panel(axs[1], h_dL, dL_by_key, colors,
                ylabel=r"$\max \ |\Delta L|$", title=None)
 
-    # (3) max dA
-    plot_panel(axs[2], h_dA, dA_by_key, colors,
-               ylabel=r"$\max \ |\Delta A|$", title=None)
+    # (3) max dE
+    plot_panel(axs[2], h_dE, dE_by_key, colors,
+               ylabel=r"$\max \ |\Delta E|$", title=None)
 
     # Shared legend outside (avoid overlap with axes; no tight_layout/subplots_adjust)
     labels = [h.get_label() for h in handles] if handles else []

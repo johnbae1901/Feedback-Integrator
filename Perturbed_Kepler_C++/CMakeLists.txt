@@ -22,7 +22,6 @@ add_executable(main main.cpp
                             include/basic_operations.cpp
                             include/euler_feedback.cpp
                             include/euler_vanilla.cpp
-                            include/euler_feedback_adaptive.cpp
                             include/stormer_verlet_B.cpp
                             include/euler_feedback_adaptive_light.cpp
                             include/getError.cpp

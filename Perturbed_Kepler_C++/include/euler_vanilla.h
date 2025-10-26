@@ -4,11 +4,12 @@
 #include <array>
 #include <tuple>
 #include <vector>
+#include "dynamics_perturbed_kepler.h" 
 
 /** 
  * @brief Dynamics for the Euler integrator: returns [dx, dv] for 6D state 
  */
-std::array<double,6> dynamics_Euler(const std::array<double,6>& x, double mu);
+std::array<double,6> dynamics_Euler(const std::array<double,6>& x, const PKParams& P);
 
 /**
  * @brief Euler vanilla integrator
@@ -22,14 +23,15 @@ std::tuple<
     std::vector<double>,
     std::vector<double>,
     std::vector<double>
-> euler_vanilla(const std::vector<double>& xi, double tf, double h, double mu);
+>
+euler_vanilla(const std::vector<double>& xi, double tf, double h, const PKParams& P);
 
 std::tuple<double, double, double>
-        euler_vanilla_error(const std::vector<double>& xi, double tf, double h, 
-                            const std::array<double,3>& L0,
-                            const std::array<double,3>& A0,
-                            double k1,
-                            double k2,
-                            double mu);
+        euler_vanilla_error(const std::vector<double>& xi,
+                           double tf,
+                           double h,
+                           double kL,
+                           double kE,
+                           const PKParams& P);
 
 #endif // EULER_VANILLA_H

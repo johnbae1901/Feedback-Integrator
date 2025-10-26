@@ -4,26 +4,22 @@
 #include <vector>
 #include <tuple>
 #include "basic_operations.h"
+#include "dynamics_perturbed_kepler.h"
 
 /**
- * @brief Computes the feedback dynamics for the 6D state x = [r(3), v(3)]:
- *        Fh = [v, -mu * r / ||r||^3] - alpha * [delVx, delVv].
+ * @brief EL-feedback RHS for perturbed Kepler.
+ *        Uses fixed references (L0, E0) passed in from the integrator.
+ *        kL_eff = alpha*kL, kE_eff = alpha*kE are already scaled gains.
  *
- * @param x      6D state vector: (x, y, z, vx, vy, vz).
- * @param mu     Gravitational parameter (or relevant constant).
- * @param alpha  Scalar feedback parameter.
- * @param k1, k2 Additional feedback gains.
- * @param L0, A0 Reference 3D vectors for feedback calculations.
- *
- * @return A 6-element vector representing [dx, dv].
+ * xdot = v - kE_eff*dE*Ur(r)*x/r - kL_eff*(v × dL)
+ * vdot = a(x) - kE_eff*dE*v      - kL_eff*(dL × x)
  */
 std::array<double,6> dynamics_Euler_feedback(const std::array<double,6>& x,
-                                            double mu,
-                                            double alpha,
-                                            double k1,
-                                            double k2,
-                                            const std::array<double,3>& L0,
-                                            const std::array<double,3>& A0);
+                                             const PKParams& P,
+                                             double kL_eff,
+                                             double kE_eff,
+                                             const std::array<double,3>& L0,
+                                             double E0);
 
 /**
  * @brief Euler integration of the 6D system with feedback:
@@ -51,21 +47,17 @@ std::tuple<
 euler_feedback(const std::vector<double>& xi,
                double tf,
                double h,
-               double mu,
+               const PKParams& P,
                double alpha,
-               double k1,
-               double k2,
-               const std::array<double,3>& L0,
-               const std::array<double,3>& A0);
+               double kL,
+               double kE);
 
 std::tuple<double, double, double> 
     euler_feedback_error(const std::vector<double>& xi,
                         double tf,
                         double h,
-                        double mu,
+                        const PKParams& P,
                         double alpha,
-                        double k1,
-                        double k2,
-                        const std::array<double,3>& L0,
-                        const std::array<double,3>& A0);
+                        double kL,
+                        double kE);
 #endif // EULER_FEEDBACK_H
