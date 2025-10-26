@@ -24,7 +24,8 @@ std::tuple<
     std::vector<double>
 > euler_vanilla(const std::vector<double>& xi, double tf, double h, double mu);
 
-double euler_vanilla_error(const std::vector<double>& xi, double tf, double h, 
+std::tuple<double, double, double>
+        euler_vanilla_error(const std::vector<double>& xi, double tf, double h, 
                             const std::array<double,3>& L0,
                             const std::array<double,3>& A0,
                             double k1,

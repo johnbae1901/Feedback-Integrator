@@ -30,12 +30,13 @@ stormer_verlet_B(const std::vector<double>& xi,
                  double h,
                  double mu);
 
-double stormer_verlet_B_error(const std::vector<double>& xi,
-                double tf,
-                double h,
-                const std::array<double,3>& L0,
-                const std::array<double,3>& A0,
-                double k1,
-                double k2,
-                double mu);
+std::tuple<double, double, double> 
+    stormer_verlet_B_error(const std::vector<double>& xi,
+                            double tf,
+                            double h,
+                            const std::array<double,3>& L0,
+                            const std::array<double,3>& A0,
+                            double k1,
+                            double k2,
+                            double mu);
 #endif // STORMER_VERLET_B_H

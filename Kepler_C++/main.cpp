@@ -24,6 +24,7 @@ struct SaveOpts {
     std::string methods = "all";  // "vanilla,feedback,adaptive,strang" or "all"
     std::string outdir = "traj";
 };
+
 SaveOpts parse_cli(int argc, char** argv){
     SaveOpts o;
     for (int i=1;i<argc;++i){
@@ -96,7 +97,6 @@ int main(int argc, char** argv)
                 maxdL_Vanilla, maxdL_VanillaFeedback, maxdL_Feedback, maxdL_AdaptiveLight, maxdL_SV, \
                 maxdA_Vanilla, maxdA_VanillaFeedback, maxdA_Feedback, maxdA_AdaptiveLight, maxdA_SV, \
                 t_vanilla, t_feedback_vanilla, t_feedback, t_adaptive, t_SV)
-
         {
             #pragma omp section
             {

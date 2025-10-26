@@ -18,7 +18,7 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}
 message(STATUS "OpenMP CXX Flags: ${OpenMP_CXX_FLAGS}")
 message(STATUS "OpenMP Linker Flags: ${OpenMP_EXE_LINKER_FLAGS}")
 
-add_executable(euler_feedback main.cpp
+add_executable(main main.cpp
                             include/basic_operations.cpp
                             include/euler_feedback.cpp
                             include/euler_vanilla.cpp
@@ -27,11 +27,12 @@ add_executable(euler_feedback main.cpp
                             include/euler_feedback_adaptive_light.cpp
                             include/getError.cpp
                             include/linspace.cpp
-                            include/estimateL.cpp)
+                            include/estimateL.cpp
+                            include/csv_io.cpp)
 
-target_link_libraries(euler_feedback PRIVATE Eigen3::Eigen)
+target_link_libraries(main PRIVATE Eigen3::Eigen)
 
 # Link libraries
-target_link_libraries(euler_feedback PRIVATE 
+target_link_libraries(main PRIVATE 
     ${OpenMP_EXE_LINKER_FLAGS} 
 )

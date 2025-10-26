@@ -58,13 +58,14 @@ euler_feedback(const std::vector<double>& xi,
                const std::array<double,3>& L0,
                const std::array<double,3>& A0);
 
-double euler_feedback_error(const std::vector<double>& xi,
-               double tf,
-               double h,
-               double mu,
-               double alpha,
-               double k1,
-               double k2,
-               const std::array<double,3>& L0,
-               const std::array<double,3>& A0);
+std::tuple<double, double, double> 
+    euler_feedback_error(const std::vector<double>& xi,
+                        double tf,
+                        double h,
+                        double mu,
+                        double alpha,
+                        double k1,
+                        double k2,
+                        const std::array<double,3>& L0,
+                        const std::array<double,3>& A0);
 #endif // EULER_FEEDBACK_H

@@ -24,6 +24,7 @@ struct SaveOpts {
     std::string methods = "all";  // "vanilla,feedback,adaptive,strang" or "all"
     std::string outdir = "traj";
 };
+
 SaveOpts parse_cli(int argc, char** argv){
     SaveOpts o;
     for (int i=1;i<argc;++i){

@@ -63,14 +63,21 @@ euler_vanilla(const std::vector<double>& xi, double tf, double h, double mu)
     // Number of points we will store
     long long N = static_cast<long long>(std::ceil(tf / h)) + 1;
 
-    // Allocate memory for outputs
-    std::vector<double> x1(N), x2(N), x3(N);
-    std::vector<double> v1(N), v2(N), v3(N);
-    std::vector<double> t (N);
+    const int stride = 1000;
+    const long long approx = 1 + (N - 1) / stride + 1;
+    vector<double> x1; x1.reserve(approx);
+    vector<double> x2; x2.reserve(approx);
+    vector<double> x3; x3.reserve(approx);
+    vector<double> v1; v1.reserve(approx);
+    vector<double> v2; v2.reserve(approx);
+    vector<double> v3; v3.reserve(approx);
+    vector<double> t;  t.reserve(approx);
+
     // Set initial values
-    x1[0] = xi[0];  x2[0] = xi[1];  x3[0] = xi[2];
-    v1[0] = xi[3];  v2[0] = xi[4];  v3[0] = xi[5];
-    t[0]  = 0.0;
+    x1.push_back(xi[0]);  x2.push_back(xi[1]);  x3.push_back(xi[2]);
+    v1.push_back(xi[3]);  v2.push_back(xi[4]);  v3.push_back(xi[5]);
+    t.push_back(0.0);
+
     // Current state and time
     std::array<double,6> current_state = {x1[0], x2[0], x3[0], v1[0], v2[0], v3[0]};
     double current_time = 0.0;
@@ -91,21 +98,21 @@ euler_vanilla(const std::vector<double>& xi, double tf, double h, double mu)
         current_state = next_state;
         current_time  = next_time;
 
-        // Store results for step i+1
-        x1[i+1] = current_state[0];
-        x2[i+1] = current_state[1];
-        x3[i+1] = current_state[2];
-        v1[i+1] = current_state[3];
-        v2[i+1] = current_state[4];
-        v3[i+1] = current_state[5];
-        t [i+1] = current_time;
+        const bool periodic_save = ((i + 1) % stride == 0);
+        const bool is_last       = (i == N - 2);
+        if (periodic_save || (is_last && !periodic_save)) {
+            x1.push_back(current_state[0]); x2.push_back(current_state[1]); x3.push_back(current_state[2]);
+            v1.push_back(current_state[3]); v2.push_back(current_state[4]); v3.push_back(current_state[5]);
+            t .push_back(current_time);
+        }
     }
 
     return { x1, x2, x3, v1, v2, v3, t };
 }
 
 
-double euler_vanilla_error(const std::vector<double>& xi, double tf, double h, 
+std::tuple<double, double, double>
+        euler_vanilla_error(const std::vector<double>& xi, double tf, double h, 
                             const std::array<double,3>& L0,
                             const std::array<double,3>& A0,
                             double k1,
@@ -114,37 +121,32 @@ double euler_vanilla_error(const std::vector<double>& xi, double tf, double h,
 {
     // Number of points we will store
     long long N = static_cast<long long>(std::ceil(tf / h)) + 1;
-    // cout << N << endl;
     
-    double maxError = 0;
+    double maxV = 0.0;
+    double maxdL_sq = 0.0;
+    double maxdA_sq = 0.0;
+    LAError currentError;
     double x1, x2, x3, v1, v2, v3, t;
 
-    // Set initial values
     x1 = xi[0];  x2 = xi[1];  x3 = xi[2];
     v1 = xi[3];  v2 = xi[4];  v3 = xi[5];
     t  = 0.0;
 
-    // Current state and time
     std::array<double,6> current_state = {x1, x2, x3, v1, v2, v3};
     double current_time = 0.0;
 
-    // Euler integration loop
     for(int i = 0; i < N - 1; ++i)
     {
-        // Compute the derivative at the current state
         std::array<double,6> F = dynamics_Euler(current_state, mu);
-        // Advance one step: next_state = current_state + h * F
         std::array<double,6> next_state;
         for(int j = 0; j < 6; ++j) {
             next_state[j] = current_state[j] + h * F[j];
         }
         double next_time = current_time + h;
 
-        // Update
         current_state = next_state;
         current_time  = next_time;
 
-        // Store results for step i+1
         x1 = current_state[0];
         x2 = current_state[1];
         x3 = current_state[2];
@@ -153,11 +155,10 @@ double euler_vanilla_error(const std::vector<double>& xi, double tf, double h,
         v3 = current_state[5];
         t  = current_time;
 
-        // double currentError = getError(x1, x2, x3, v1, v2, v3, L0, A0, k1, k2, mu);
-        // if ( currentError >= maxError) {
-        //     maxError = currentError;
-        // }
+        currentError = getError(x1, x2, x3, v1, v2, v3, L0, A0, k1, k2, mu);
+        if ( currentError.error >= maxV) maxV = currentError.error;
+        if ( currentError.distL_sq >= maxdL_sq) maxdL_sq = currentError.distL_sq;
+        if ( currentError.distA_sq >= maxdA_sq) maxdA_sq = currentError.distA_sq;
     }
-
-    return maxError;
+    return {maxV, sqrt(maxdL_sq), sqrt(maxdA_sq)};
 }
