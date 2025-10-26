@@ -71,6 +71,7 @@
         "numeric": "cpp",
         "stack": "cpp",
         "core": "cpp",
-        "lu": "cpp"
+        "lu": "cpp",
+        "filesystem": "cpp"
     }
 }

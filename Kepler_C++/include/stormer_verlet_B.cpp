@@ -149,7 +149,6 @@ stormer_verlet_B_error(const std::vector<double>& xi,
                         double mu)
 {
     long long N = static_cast<long long>(std::ceil(tf/h)) + 1;
-    // cout << N << endl;
 
     double maxV = 0.0;
     double maxdL_sq = 0.0;

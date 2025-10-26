@@ -4,6 +4,7 @@
 #include <array>
 #include <vector>
 #include <tuple>
+#include "dynamics_perturbed_kepler.h"
 
 /**
  * @brief Integrates a 6D state (x, y, z, vx, vy, vz) using a Stormer–Verlet (leapfrog) integrator.
@@ -28,14 +29,13 @@ std::tuple<
 stormer_verlet_B(const std::vector<double>& xi,
                  double tf,
                  double h,
-                 double mu);
+                 const PKParams& P);
 
-double stormer_verlet_B_error(const std::vector<double>& xi,
-                double tf,
-                double h,
-                const std::array<double,3>& L0,
-                const std::array<double,3>& A0,
-                double k1,
-                double k2,
-                double mu);
+std::tuple<double, double, double> 
+    stormer_verlet_B_error(const std::vector<double>& xi,
+                            double tf,
+                            double h,
+                            double k1,  // -> kL
+                            double k2,  // -> kE
+                            const PKParams& P);
 #endif // STORMER_VERLET_B_H

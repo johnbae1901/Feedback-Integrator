@@ -11,4 +11,4 @@ SCRIPT="./plotters/plot_cpu_time.py"
 
 mkdir -p "${OUT_DIR}"
 
-"${PY}" "${SCRIPT}" --csv "${CSV}" --out "${OUT}" --title "${TITLE}" --x neglogh
+"${PY}" "${SCRIPT}" --csv "${CSV}" --out "${OUT}" --title "${TITLE}" --x h

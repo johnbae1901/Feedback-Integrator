@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <tuple>
+#include "dynamics_perturbed_kepler.h"
 
 /**
  * @brief euler_feedback_adaptive:
@@ -21,48 +22,45 @@ std::tuple<
 euler_feedback_adaptive_light(const std::vector<double>& xi,
                         double tf,
                         double h,
-                        double mu,
-                        double c,
-                        double k1,
-                        double k2,
-                        const std::array<double,3>& L0,
-                        const std::array<double,3>& A0,
+                        const PKParams& P,
+                        double kL,
+                        double kE,
                         const int m,
-                        const double lambda);
+                        const double lambda, 
+                        const double Hmin);
 
-/**
- * @brief dynamics_Euler_feedback
- *   - The 6D right-hand side with an adaptive alpha = 1/(h * lipConstant).
- */
+// /**
+//  * @brief dynamics_Euler_feedback
+//  *   - The 6D right-hand side with an adaptive alpha = 1/(h * lipConstant).
+//  */
+// // std::array<double,6> dynamics_Euler_feedback_light(const std::array<double,6>& x,
+// //                                             double mu,
+// //                                             double c,
+// //                                             double h,
+// //                                             double k1,
+// //                                             double k2,
+// //                                             const std::array<double,3>& L0,
+// //                                             const std::array<double,3>& A0);
+
 // std::array<double,6> dynamics_Euler_feedback_light(const std::array<double,6>& x,
 //                                             double mu,
-//                                             double c,
 //                                             double h,
 //                                             double k1,
 //                                             double k2,
 //                                             const std::array<double,3>& L0,
-//                                             const std::array<double,3>& A0);
+//                                             const std::array<double,3>& A0,
+//                                             const double lipConstant,
+//                                             const double Hmin);
 
-std::array<double,6> dynamics_Euler_feedback_light(const std::array<double,6>& x,
-                                            double mu,
-                                            double c,
-                                            double h,
-                                            double k1,
-                                            double k2,
-                                            const std::array<double,3>& L0,
-                                            const std::array<double,3>& A0,
-                                            const double lipConstant);
-
-double euler_feedback_adaptive_error_light(const std::vector<double>& xi,
-                        double tf,
-                        double h,
-                        double mu,
-                        double c,
-                        double k1,
-                        double k2,
-                        const std::array<double,3>& L0,
-                        const std::array<double,3>& A0,
-                        const int m,
-                        const double lambda);
+std::tuple<double, double, double>  
+    euler_feedback_adaptive_error_light(const std::vector<double>& xi,
+                                        double tf,
+                                        double h,
+                                        const PKParams& P,
+                                        double kL,
+                                        double kE,
+                                        const int m,
+                                        const double lambda,
+                                        const double Hmin);
 
 #endif // EULER_FEEDBACK_ADAPTIVE_LIGHT_H

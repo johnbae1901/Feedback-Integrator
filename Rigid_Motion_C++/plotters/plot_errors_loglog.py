@@ -36,30 +36,36 @@ def positive_mask(*arrays):
         mask &= (a > 0)
     return mask
 
-def plot_panel(ax, h, series_list, colors, title, ylabel):
-    # series_list: list of (y_array, key, label, marker)
+def plot_panel(ax, h, series_list, colors, ylabel, title, drop_over):
+    """
+    series_list: [(y_array, key, label, marker), ...]
+    colors: dict to keep method->color consistent across panels
+    """
     handles = []
     for (y, key, label, marker) in series_list:
-        # log-log; filter to positive entries
-        m = positive_mask(h, y)
-        if not np.any(m):  # nothing to draw
+        y = np.asarray(y, dtype=float)
+        y = np.where(y > drop_over, np.inf, y)
+        m = np.isfinite(y) & (y > 0) & np.isfinite(h) & (h > 0)
+        if not np.any(m):
             continue
-        if colors.get(key) is None:
-            # First panel decides colors; others reuse
-            line, = ax.loglog(h[m], y[m], marker=marker, markersize=10, linewidth=2.4, label=label)
-            colors[key] = line.get_color()
-            handles.append(line)
-        else:
-            line, = ax.loglog(h[m], y[m], marker=marker, markersize=10, linewidth=2.4,
-                              label=label, color=colors[key])
-            handles.append(line)
 
-    ax.set_xlabel(r"$h$", fontsize=20)
-    ax.set_ylabel(ylabel, fontsize=20)
+        if key not in colors:
+            ln, = ax.loglog(h[m], y[m], marker=marker, markersize=9, linewidth=2.2, label=label)
+            colors[key] = ln.get_color()
+            handles.append(ln)
+        else:
+            ln, = ax.loglog(h[m], y[m], marker=marker, markersize=9, linewidth=2.2,
+                            label=label, color=colors[key])
+            handles.append(ln)
+
+    ax.set_xlabel(r"$h$", fontsize=15)
+    ax.set_ylabel(ylabel, fontsize=15)
+    if title:
+        ax.set_title(title, fontsize=15)
     ax.grid(True, which='both', linestyle='--', alpha=0.8)
-    ax.set_title(title, fontsize=20)
-    ax.tick_params(labelsize=16)
+    ax.tick_params(labelsize=11)
     return handles
+
 
 def main():
     ap = argparse.ArgumentParser()
@@ -75,6 +81,8 @@ def main():
                     help='Save figure to this path (.png/.pdf). If omitted, show on screen.')
     ap.add_argument('--title', default='Error & Invariant Deviations vs Step Size',
                     help='Suptitle for the 2x2 figure')
+    ap.add_argument('--drop_over', type=float, default=1e8,
+                help='Treat values above this as +inf and drop them on log axes')
     args = ap.parse_args()
 
     # ---- Read all CSVs
@@ -97,7 +105,7 @@ def main():
     ]
     h_a = h_err
     handles = plot_panel(axs[0,0], h_a, series_err, colors,
-                         title=None, ylabel=r"$\max \ V(x_k)$")
+                         title=None, ylabel=r"$\max \ V(x_k)$", drop_over=args.drop_over)
 
     # Panel (b)
     series_dD = [
@@ -108,7 +116,7 @@ def main():
         (dD_str,   "strang",           METHOD_LABELS[4][1], METHOD_LABELS[4][2]),
     ]
     plot_panel(axs[0,1], h_dD, series_dD, colors,
-               title=None, ylabel=r"$\max \ \|R^\top R - 1\|_F$")
+               title=None, ylabel=r"$\max \ \|R^\top R - 1\|_F$", drop_over=args.drop_over)
 
     # Panel (c)
     series_dE = [
@@ -119,7 +127,7 @@ def main():
         (dE_str,   "strang",           METHOD_LABELS[4][1], METHOD_LABELS[4][2]),
     ]
     plot_panel(axs[1,0], h_dE, series_dE, colors,
-               title=None, ylabel=r"$\max \ |\Delta E|$")
+               title=None, ylabel=r"$\max \ |\Delta E|$", drop_over=args.drop_over)
 
     # Panel (d)
     series_dP = [
@@ -130,9 +138,8 @@ def main():
         (dP_str,   "strang",           METHOD_LABELS[4][1], METHOD_LABELS[4][2]),
     ]
     plot_panel(axs[1,1], h_dP, series_dP, colors,
-               title=None, ylabel=r"$\max \ |\Delta \pi|$")
+               title=None, ylabel=r"$\max \ |\Delta \pi|$", drop_over=args.drop_over)
 
-    
 
     # One shared legend (methods), using handles from panel (a)
     if handles:

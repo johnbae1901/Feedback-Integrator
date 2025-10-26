@@ -216,7 +216,7 @@ euler_feedback_adaptive_light(const std::vector<double>& xi,
 }
 
 
-std::tuple<double, double, double>  
+std::tuple<double, double, double> 
 euler_feedback_adaptive_error_light(const std::vector<double>& xi,
                                     double tf,
                                     double h,
