@@ -52,11 +52,11 @@ int main(int argc, char** argv)
     const double lambda = 1.1;
     const vector<double> log_h = linspace(-1, -6, numOfIter);
 
-    const vector<double> xi = {1.0, 0.0, 0.0, 0.0, sqrt(1.8), 0.0}; // initial [x1,x2,x3, v1,v2,v3]
+    const vector<double> xi = {1.0, 0.0, 0.0, 0.0, sqrt(1.8), 0.0};
     const double ri_array[3] = { xi[0], xi[1], xi[2] };
     const double vi_array[3] = { xi[3], xi[4], xi[5] };
     const double T = 70.2481;
-    const double tf = 1000*T;    // final time
+    const double tf = 1000*T;
     const double mu = 1.0;
     const double k1 = 4, k2 = 2;
     const double L = 487.69;
@@ -152,11 +152,11 @@ int main(int argc, char** argv)
 
             #pragma omp section
             {
-            // Run Störmer-Verlet-B
+            // Run Störmer-Verlet
             chrono::system_clock::time_point start = chrono::system_clock::now();
             auto [error, maxdL, maxdA] = stormer_verlet_B_error(xi, tf, h, L0_array, A0_array, k1, k2, mu);
             chrono::duration<double> duration = chrono::system_clock::now() - start;
-            cout << "CPU time for Stormer-Verlet method (B) : " << duration.count() << endl;
+            cout << "CPU time for Stormer-Verlet method : " << duration.count() << endl;
             t_SV[n] = duration.count();
             maxErrorSV[n] = error;
             maxdL_SV[n] = maxdL;
