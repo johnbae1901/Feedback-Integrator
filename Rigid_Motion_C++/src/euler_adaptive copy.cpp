@@ -710,8 +710,6 @@ std::tuple<
     
     // L(x)
     double lipConstant;
-    // double minL = 1e5;
-    // double maxL = 0.0;
 
     // Euler integration loop.
     for (int i = 0; i < N; i++) {
@@ -728,8 +726,6 @@ std::tuple<
             }
             // Estimate L and compute adaptive gain alpha = 1 / (h * L)
             lipConstant = lambda * estimateL(R, Omega);
-            // if (lipConstant < minL) minL = lipConstant; 
-            // if (lipConstant > maxL) maxL = lipConstant;
         }
 
         // Compute the state derivative using the feedback dynamics.
@@ -762,7 +758,5 @@ std::tuple<
         if (currentError.frob_RT_R_minus_I_sq >= maxdDet_sq)
             maxdDet_sq = currentError.frob_RT_R_minus_I_sq;
     }
-    // cout << minL / lambda << endl;
-    // cout << maxL / lambda << endl;
     return {maxV, maxdE, sqrt(maxdPi_sq), sqrt(maxdDet_sq)};
 }

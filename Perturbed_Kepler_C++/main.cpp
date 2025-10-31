@@ -48,10 +48,10 @@ int main(int argc, char** argv)
 {
     SaveOpts save = parse_cli(argc, argv);
     // Parameters
-    const int numOfIter = 5;
+    const int numOfIter = 10;
     const double L_update_period = 0.1;
     const double lambda = 1.1;
-    const vector<double> log_h = linspace(-1, -7, numOfIter);
+    const vector<double> log_h = linspace(-1, -9, numOfIter);
 
     const double e = 0.6;
     const vector<double> xi = {1.0 - e, 0.0, 0.0, 0.0, sqrt((1+e)/(1-e)), 0.0}; // initial [x1,x2,x3, v1,v2,v3]
