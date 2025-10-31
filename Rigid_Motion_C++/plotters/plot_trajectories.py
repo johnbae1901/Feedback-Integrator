@@ -2,6 +2,7 @@
 import argparse, os, csv
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.transforms import Bbox
 
 def load_traj(csv_path):
     t=[]; om=[]; R=[]
@@ -16,7 +17,6 @@ def load_traj(csv_path):
     return np.array(t), np.array(om), np.array(R)
 
 def set_equal_3d(ax, X, Y, Z):
-    # equal aspect for 3D
     x_min, x_max = np.min(X), np.max(X)
     y_min, y_max = np.min(Y), np.max(Y)
     z_min, z_max = np.min(Z), np.max(Z)
@@ -31,6 +31,20 @@ def set_equal_3d(ax, X, Y, Z):
     except Exception:
         pass
 
+def save_with_asymmetric_margins(fig, ax, outpath,
+                                 pad_inch=(0.18, 0.06, 0.18, 0.06)):
+    fig.canvas.draw()
+    renderer = fig.canvas.get_renderer()
+    bb = ax.get_tightbbox(renderer).transformed(fig.dpi_scale_trans.inverted())
+
+    L, B, R, T = pad_inch
+    crop = Bbox.from_extents(bb.x0 - L, bb.y0 - B, bb.x1 + R, bb.y1 + T)
+
+    fig.savefig(outpath,
+                bbox_inches=crop,
+                dpi=300,
+                transparent=True)
+
 def parse_range(s):
     a,b = s.split(',')
     return float(a), float(b)
@@ -38,27 +52,25 @@ def parse_range(s):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--base', default='trajectory_data')
-    ap.add_argument('--h', required=True, help='e.g., 0.001 or 1e-3 (string match in folder name)')
+    ap.add_argument('--h', required=True)
     ap.add_argument('--method', default='vanilla',
                     choices=['vanilla','vanilla_feedback','feedback','adaptive','strang'])
-    ap.add_argument('--out', default=None, help='optional save path (PNG). If omitted, just show.')
-    ap.add_argument('--title', default=None, help='optional plot title')
-    ap.add_argument('--elev', type=float, default=25.0, help='elevation angle (deg)')
-    ap.add_argument('--azim', type=float, default=-125.0, help='azimuth angle (deg)')
-    ap.add_argument('--xlim', default='0.5,1.5', help='xmin,xmax or "auto"')
-    ap.add_argument('--ylim', default='-2.0,2.0', help='ymin,ymax or "auto"')
-    ap.add_argument('--zlim', default='-2.0,2.0', help='zmin,zmax or "auto"')
+    ap.add_argument('--out', default=None, help='PNG path')
+    ap.add_argument('--title', default=None)
+    ap.add_argument('--elev', type=float, default=25.0)
+    ap.add_argument('--azim', type=float, default=-130.0)
+    ap.add_argument('--xlim', default='0.5,1.5')   # or "auto"
+    ap.add_argument('--ylim', default='-2.0,2.0')  # or "auto"
+    ap.add_argument('--zlim', default='-2.0,2.0')  # or "auto"
     args = ap.parse_args()
 
     folder = os.path.join(args.base, args.method, f"h={args.h}")
     csv_path = os.path.join(folder, "traj.csv")
     if not os.path.exists(csv_path):
-        # try approximate: pick first directory starting with f"h="
         mdir = os.path.join(args.base, args.method)
         candidates = [d for d in os.listdir(mdir) if d.startswith("h=")]
         if not candidates:
             raise SystemExit(f"No trajectories found in {mdir}")
-        # choose the closest in log-space
         target = float(args.h)
         def closeness(d):
             val = float(d.split('=')[1])
@@ -68,22 +80,30 @@ def main():
 
     t, om, R = load_traj(csv_path)
 
-    # Plot Omega trajectory
+    # === Plot Omega trajectory (3D) ===
     fig = plt.figure(figsize=(8.0,8.0), constrained_layout=True)
     ax = fig.add_subplot(111, projection='3d')
-    ax.plot(om[:,0], om[:,1], om[:,2], linewidth=2.4)
-    ax.set_xlabel(r'$\Omega_1$', fontsize=26, labelpad=8)
-    ax.set_ylabel(r'$\Omega_2$', fontsize=26, labelpad=8)
-    ax.set_zlabel(r'$\Omega_3$', fontsize=26, labelpad=8)
-    ax.tick_params(axis='x', labelsize=20)
-    ax.tick_params(axis='y', labelsize=20)
-    ax.tick_params(axis='z', labelsize=20)
+    ax.plot(om[:,0], om[:,1], om[:,2], linewidth=3.0, color='k')
+
+    # labels — add extra padding so they don't collide with tick labels
+    ax.xaxis.set_rotate_label(False)
+    ax.yaxis.set_rotate_label(False)
+    ax.zaxis.set_rotate_label(False)
+    ax.set_xlabel(r'$\Omega_1$', fontsize=26, labelpad=12)
+    ax.set_ylabel(r'$\Omega_2$', fontsize=26, labelpad=10)
+    ax.set_zlabel(r'$\Omega_3$', rotation=0, fontsize=26, labelpad=10)
+
+    # tick label size + distance from axes
+    ax.tick_params(axis='x', which='major', labelsize=18, pad=3)
+    ax.tick_params(axis='y', which='major', labelsize=18, pad=3)
+    ax.tick_params(axis='z', which='major', labelsize=18, pad=3)
+
     if args.title:
         ax.set_title(args.title)
-    # set_equal_3d(ax, om[:,0], om[:,1], om[:,2])
+
     ax.view_init(elev=args.elev, azim=args.azim)
 
-    # axis limits: use fixed defaults (≈ the figure) unless "auto"
+    # axis limits
     any_auto = False
     if args.xlim == 'auto': any_auto = True
     else: ax.set_xlim(*parse_range(args.xlim))
@@ -91,47 +111,35 @@ def main():
     else: ax.set_ylim(*parse_range(args.ylim))
     if args.zlim == 'auto': any_auto = True
     else: ax.set_zlim(*parse_range(args.zlim))
-
-    # if any axis is 'auto', keep equal aspect based on data
     if any_auto:
         set_equal_3d(ax, om[:,0], om[:,1], om[:,2])
 
+    # minimal ticks as requested
+    ax.set_xticks([0.5, 1.0, 1.5])
+    ax.set_yticks([-2.0, -1.0, 0.0, 1.0, 2.0])
+    ax.set_zticks([-2.0, -1.0, 0.0, 1.0, 2.0])
+
+    ax.set_proj_type('ortho')          
+
+    ax.tick_params(axis='x', pad=3)
+    ax.tick_params(axis='y', pad=15)
+    ax.tick_params(axis='z', pad=3)
+
+    for t in ax.get_xticklabels():
+        t.set_verticalalignment('top')
+        t.set_horizontalalignment('center')
+
+    for t in ax.get_yticklabels():
+        t.set_verticalalignment('bottom') 
+        t.set_horizontalalignment('right')
+
     if args.out:
-        plt.savefig(args.out, bbox_inches='tight', transparent=True)
+        fig.canvas.draw()  # update tight bbox
+        save_with_asymmetric_margins(fig, ax, args.out,
+                             pad_inch=(0.6, 0.0, 0.3, 0.0))
         print(f"Saved 3D trajectory to {args.out}")
     else:
         plt.show()
-
-    # # Plot Omega
-    # plt.figure()
-    # plt.plot(t, om[:,0], label='omega_x')
-    # plt.plot(t, om[:,1], label='omega_y')
-    # plt.plot(t, om[:,2], label='omega_z')
-    # plt.xlabel('t')
-    # plt.ylabel('Omega components')
-    # plt.legend()
-    # if args.out:
-    #     base,ext = os.path.splitext(args.out)
-    #     out1 = base+"_omega.png"
-    #     plt.savefig(out1, dpi=150, bbox_inches='tight')
-    # else:
-    #     plt.show()
-
-    # # Plot R entries (9 curves)
-    # plt.figure()
-    # labels = ['R00','R01','R02','R10','R11','R12','R20','R21','R22']
-    # for i in range(9):
-    #     plt.plot(t, R[:,i], label=labels[i])
-    # plt.xlabel('t')
-    # plt.ylabel('R entries')
-    # plt.legend(ncol=3)
-    # if args.out:
-    #     base,ext = os.path.splitext(args.out)
-    #     out2 = base+"_R.png"
-    #     plt.savefig(out2, dpi=150, bbox_inches='tight')
-    #     print(f"Saved plots to {out1} and {out2}")
-    # else:
-    #     plt.show()
 
 if __name__ == "__main__":
     main()
