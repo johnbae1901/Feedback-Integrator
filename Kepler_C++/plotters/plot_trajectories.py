@@ -54,26 +54,27 @@ def main():
     ap.add_argument('--title', default=None)
     ap.add_argument('--xlim', default='auto', help='xmin,xmax or "auto"')
     ap.add_argument('--ylim', default='auto', help='ymin,ymax or "auto"')
-    ap.add_argument('--mark_endpoints', type=int, default=1, help='plot start/end markers (1/0)')
-    ap.add_argument('--linewidth', type=float, default=2.0)
+    ap.add_argument('--mark_endpoints', type=int, default=False, help='plot start/end markers (1/0)')
+    ap.add_argument('--linewidth', type=float, default=3.0)
     args = ap.parse_args()
 
     csv_path = find_csv(args.base, args.method, args.h)
     x1, x2 = load_x1x2(csv_path)
 
-    fig = plt.figure(figsize=(7.0, 7.0), constrained_layout=True)
+    fig = plt.figure(figsize=(12.0, 8.0), constrained_layout=True)
     ax = fig.add_subplot(111)
-    ax.plot(x1, x2, linewidth=args.linewidth)
+    ax.plot(x1, x2, linewidth=args.linewidth, color='k')
     if args.mark_endpoints:
         ax.plot(x1[0], x2[0], marker='o', markersize=6)   # start
         ax.plot(x1[-1], x2[-1], marker='x', markersize=8) # end
 
-    ax.set_xlabel(r'$x_1$', fontsize=18)
-    ax.set_ylabel(r'$x_2$', fontsize=18)
-    ax.tick_params(axis='both', labelsize=12)
-    ax.set_aspect('equal', adjustable='box')
+    ax.set_xlabel(r'$x_1$', fontsize=40)
+    ax.set_ylabel(r'$x_2$', fontsize=40)
+    ax.tick_params(axis='both', labelsize=36)
+    ax.grid(True, which='both', linestyle='--', alpha=0.8)
+    # ax.set_aspect('equal', adjustable='box')
     if args.title:
-        ax.set_title(args.title, fontsize=14)
+        ax.set_title(args.title, fontsize=36)
 
     # axis limits
     if args.xlim != 'auto':

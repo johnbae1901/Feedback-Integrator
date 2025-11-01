@@ -70,7 +70,7 @@ def main():
         ('vanilla_feedback', 'Feedback (unity gain)',         's'),
         ('feedback',         r'Feedback $(1/hL)$',            '^'),
         ('adaptive',         'Adaptive Feedback',             'D'),
-        ('SV',               'Stormer Verlet method',         'v'),
+        ('SV',               'Störmer Verlet method',         'v'),
     ]
     for key, label, marker in order:
         if key in d:

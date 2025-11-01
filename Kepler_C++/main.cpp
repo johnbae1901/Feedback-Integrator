@@ -60,7 +60,7 @@ int main(int argc, char** argv)
     const double tf = 1000*T;
     const double mu = 1.0;
     const double k1 = 4, k2 = 2;
-    const double L = 487.69;
+    const double L = 515.4;
     const double Hmin = 1e-10;
 
     double maxErrorVanilla[numOfIter], maxErrorVanillaFeedback[numOfIter], maxErrorFeedback[numOfIter], maxErrorAdaptive[numOfIter], maxErrorAdaptiveLight[numOfIter], maxErrorSV[numOfIter];

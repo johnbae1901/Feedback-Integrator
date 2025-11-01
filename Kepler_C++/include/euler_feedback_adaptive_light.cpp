@@ -236,6 +236,8 @@ euler_feedback_adaptive_error_light(const std::vector<double>& xi,
     double maxdL_sq = 0.0;
     double maxdA_sq = 0.0;
     LAError currentError;
+    double maxL = 0.0;
+    double minL = 1e5;
     double x1, x2, x3, v1, v2, v3, t;
 
     // Set initial values
@@ -256,6 +258,8 @@ euler_feedback_adaptive_error_light(const std::vector<double>& xi,
         if ((i % m) == 0)
         {
             lipConstant = lambda * estimateL(current_state, mu, k1, k2);
+            if (lipConstant <= minL) minL = lipConstant;
+            if (lipConstant >= maxL) maxL = lipConstant;
         }
 
         // Evaluate dynamics at current_state
@@ -288,5 +292,7 @@ euler_feedback_adaptive_error_light(const std::vector<double>& xi,
         if ( currentError.distL_sq >= maxdL_sq) maxdL_sq = currentError.distL_sq;
         if ( currentError.distA_sq >= maxdA_sq) maxdA_sq = currentError.distA_sq;
     }
+    cout << minL << endl;
+    cout << maxL << endl;
     return {maxV, sqrt(maxdL_sq), sqrt(maxdA_sq)};
 }
