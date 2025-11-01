@@ -12,7 +12,7 @@ METHODS = [
     ("vanilla_feedback",  "Feedback (unity gain)",     's'),
     ("feedback",          r"Feedback $(1/hL)$",        '^'),
     ("adaptive",          "Adaptive Feedback",         'D'),
-    ("SV",                "Störmer–Verlet (B)",        'v'),
+    ("SV",                "Störmer–Verlet",            'v'),
 ]
 
 def read_wide_csv(path):

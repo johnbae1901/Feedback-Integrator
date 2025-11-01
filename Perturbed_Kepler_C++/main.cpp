@@ -33,7 +33,7 @@ SaveOpts parse_cli(int argc, char** argv){
         auto eat = [&](const char* key, std::string& dst){
             const std::string k = std::string(key) + "=";
             if (s.rfind(k,0)==0){ dst = s.substr(k.size()); return true; }
-            return false;
+            return false; 
         };
         std::string v;
         if (eat("--save", v)) { o.enable = (v=="1" || v=="true" || v=="on"); continue; }
@@ -60,7 +60,7 @@ int main(int argc, char** argv)
     const double tf = 200;    // final time
     const double mu = 1.0;
     const double k1 = 2, k2 = 3;
-    const double L = 487.69;
+    const double L = 162.83;
     const double Hmin = 1e-10;
 
     PKParams P; P.mu = 1.0; P.delta = 0.0025;
