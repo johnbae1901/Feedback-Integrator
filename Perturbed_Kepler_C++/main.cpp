@@ -60,7 +60,7 @@ int main(int argc, char** argv)
     const double tf = 200;    // final time
     const double mu = 1.0;
     const double k1 = 2, k2 = 3;
-    const double L = 162.83;
+    const double L = 148.03;
     const double Hmin = 1e-10;
 
     PKParams P; P.mu = 1.0; P.delta = 0.0025;

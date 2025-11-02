@@ -282,8 +282,8 @@ std::tuple<double, double, double>
     double maxV = 0.0;
     double maxdE_sq = 0.0;
     double maxdL_sq = 0.0;
-    double maxL = 0.0;
-    double minL = 1e5;
+    // double maxL = 0.0;
+    // double minL = 1e5;
     LEError currentError;
     double x1, x2, x3, v1, v2, v3, t;
 
@@ -309,8 +309,8 @@ std::tuple<double, double, double>
         if ((i % m) == 0)
         {
             Lhat = lambda * estimateL(current_state, P, kL, kE);
-            if (minL >= Lhat) minL = Lhat;
-            if (maxL <= Lhat) maxL = Lhat;
+            // if (minL >= Lhat) minL = Lhat;
+            // if (maxL <= Lhat) maxL = Lhat;
         }
 
         const double kL_eff = alpha * kL;
@@ -341,7 +341,7 @@ std::tuple<double, double, double>
         if ( currentError.distE_sq >= maxdE_sq) maxdE_sq = currentError.distE_sq;
         if ( currentError.distL_sq >= maxdL_sq) maxdL_sq = currentError.distL_sq;
     }
-    cout << minL << endl;
-    cout << maxL << endl;
+    // cout << minL / lambda << endl;
+    // cout << maxL / lambda << endl;
     return {maxV, sqrt(maxdE_sq), sqrt(maxdL_sq)};
 }
