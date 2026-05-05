@@ -56,6 +56,8 @@ def main():
     ap.add_argument('--ylim', default='auto', help='ymin,ymax or "auto"')
     ap.add_argument('--mark_endpoints', type=int, default=False, help='plot start/end markers (1/0)')
     ap.add_argument('--linewidth', type=float, default=3.0)
+    ap.add_argument('--rasterize_traj', type=int, default=1, help='rasterize trajectory line in vector outputs such as PDF; 1/0')
+    ap.add_argument('--raster_dpi', type=int, default=600, help='DPI used for rasterized trajectory when saving PDF')
     args = ap.parse_args()
 
     csv_path = find_csv(args.base, args.method, args.h)
@@ -63,7 +65,7 @@ def main():
 
     fig = plt.figure(figsize=(12.0, 8.0), constrained_layout=True)
     ax = fig.add_subplot(111)
-    ax.plot(x1, x2, linewidth=args.linewidth, color='k')
+    ax.plot(x1, x2, linewidth=args.linewidth, color='k', rasterized=bool(args.rasterize_traj))
     if args.mark_endpoints:
         ax.plot(x1[0], x2[0], marker='o', markersize=6)   # start
         ax.plot(x1[-1], x2[-1], marker='x', markersize=8) # end
@@ -84,7 +86,7 @@ def main():
 
     if args.out:
         os.makedirs(os.path.dirname(args.out), exist_ok=True)
-        plt.savefig(args.out, bbox_inches='tight', transparent=True)
+        plt.savefig(args.out, bbox_inches='tight', transparent=True, dpi=args.raster_dpi)
         print(f"Saved x1-x2 trajectory to {args.out}")
     else:
         plt.show()
